@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+require "rubygems"
+require "optparse"
+
+$LOAD_PATH << File.join(File.dirname(__FILE__), '..', 'lib')
+require "repo_dependency_graph"
+
+def git_config(thing)
+  result = `git config #{thing}`.strip
+  result.empty? ? nil : result
+end
+
+options = {
+  :user => git_config("github.user")
+}
+OptionParser.new do |opts|
+  opts.banner = <<BANNER
+Draw repo dependency graph from your organization
+
+Usage:
+    repo-dependency-graph <github-user/org-name>
+
+Options:
+BANNER
+  opts.on("--token TOKEN", "Use token") { |token| options[:token] = token }
+  opts.on("--user USER", "Use user") { |user| options[:user] = user }
+  opts.on("--organization ORGANIZATION", "Use user") { |organization| options[:organization] = organization }
+  opts.on("-h", "--help", "Show this.") { puts opts; exit }
+  opts.on("-v", "--version", "Show Version"){ puts RepoDependencyGraph::VERSION; exit}
+end.parse!
+
+exit RepoDependencyGraph.run(options)
