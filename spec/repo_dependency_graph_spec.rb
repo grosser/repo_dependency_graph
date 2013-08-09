@@ -7,11 +7,13 @@ describe RepoDependencyGraph do
     RepoDependencyGraph::VERSION.should =~ /^[\.\da-z]+$/
   end
 
-  context ".dependencies" do
-    it "gathers dependencies" do
-      graph = RepoDependencyGraph.dependencies(:organization => config["organization"], :token => config["token"])
-      expected = graph[config["expected_organization"]]
-      expected.should == config["expected_organization_dependencies"]
+  if File.exist?("spec/private.yml")
+    context ".dependencies" do
+      it "gathers dependencies" do
+        graph = RepoDependencyGraph.dependencies(:organization => config["organization"], :token => config["token"])
+        expected = graph[config["expected_organization"]]
+        expected.should == config["expected_organization_dependencies"]
+      end
     end
   end
 
