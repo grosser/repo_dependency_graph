@@ -18,7 +18,7 @@ OptionParser.new do |opts|
 Draw repo dependency graph from your organization
 
 Usage:
-    repo-dependency-graph <github-user/org-name>
+    repo-dependency-graph
 
 Options:
 BANNER

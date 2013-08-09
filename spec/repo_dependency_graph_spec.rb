@@ -1,8 +1,71 @@
 require "spec_helper"
 
 describe RepoDependencyGraph do
+  let(:config){ YAML.load_file("spec/private.yml") }
+
   it "has a VERSION" do
     RepoDependencyGraph::VERSION.should =~ /^[\.\da-z]+$/
+  end
+
+  context ".dependencies" do
+    it "gathers dependencies" do
+      graph = RepoDependencyGraph.dependencies(:organization => config["organization"], :token => config["token"])
+      expected = graph[config["expected_organization"]]
+      expected.should == config["expected_organization_dependencies"]
+    end
+  end
+
+  context ".load_spec" do
+    it "loads simple spec" do
+      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+        Gem::Specification.new "foo" do |s|
+          s.add_runtime_dependency "xxx", "1.1.1"
+        end
+      RUBY
+      spec.name.should == "foo"
+    end
+
+    it "loads spec with require" do
+      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+        require 'asdadadsadas'
+        Gem::Specification.new "foo" do |s|
+          s.add_runtime_dependency "xxx", "1.1.1"
+        end
+      RUBY
+      spec.name.should == "foo"
+    end
+
+    it "loads spec with VERSION" do
+      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+        Gem::Specification.new "foo", Foo::VERSION do |s|
+          s.add_runtime_dependency "xxx", "1.1.1"
+        end
+      RUBY
+      spec.name.should == "foo"
+      spec.version.to_s.should == "1.2.3"
+    end
+
+    it "does not modify $LOAD_PATH" do
+      expect {
+        RepoDependencyGraph.send(:load_spec, <<-RUBY)
+          $LOAD_PATH << "xxx"
+          $:.unshift "xxx"
+          Gem::Specification.new "foo", Foo::VERSION do |s|
+            s.add_runtime_dependency "xxx", "1.1.1"
+          end
+        RUBY
+      }.to_not change { $LOAD_PATH }
+    end
+
+    it "loads spec with File.read" do
+      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+        Gem::Specification.new "foo", File.read("xxxx") do |s|
+          s.add_runtime_dependency "xxx", "1.1.1"
+        end
+      RUBY
+      spec.name.should == "foo"
+      spec.version.to_s.should == "1.2.3"
+    end
   end
 
   context "CLI" do
