@@ -1,4 +1,7 @@
 bundler_args: ""
+before_script:
+ - sudo apt-get update
+ - sudo apt-get install graphviz
 rvm:
   - ree
   - 1.9.2
