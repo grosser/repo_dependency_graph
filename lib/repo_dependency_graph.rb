@@ -32,9 +32,9 @@ module RepoDependencyGraph
       raise ArgumentError, "Map only makes sense when searching for internal repos" if options[:map] && options[:external]
 
       all = Bundler::OrganizationAudit::Repo.all(options).sort_by(&:project)
-      all.select!(&:private?) if options[:private]
-      all.select! { |r| r.project =~ options[:select] } if options[:select]
-      all.reject! { |r| r.project =~ options[:reject] } if options[:reject]
+      all = all.select(&:private?) if options[:private]
+      all = all.select { |r| r.project =~ options[:select] } if options[:select]
+      all = all.reject { |r| r.project =~ options[:reject] } if options[:reject]
 
       possible = all.map(&:project)
       possible.map! { |p| p.sub(options[:map][0], options[:map][1].to_s) } if options[:map]
