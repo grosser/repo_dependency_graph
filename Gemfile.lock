@@ -28,7 +28,6 @@ PLATFORMS
 
 DEPENDENCIES
   bump
-  bundler-organization_audit
   rake
   repo_dependency_graph!
   rspec (~> 2)
