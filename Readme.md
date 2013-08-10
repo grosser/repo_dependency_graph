@@ -44,8 +44,6 @@ repo-dependency-graph --organization xyz --token ttttoookkkeeeennn
 TODO
 ====
  - switch between runtime-dependency / development-dependency / any
- - `--ignore / --pattern` flag
- - `--chef` flag
 
 Author
 ======
