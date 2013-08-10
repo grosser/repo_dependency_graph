@@ -24,7 +24,7 @@ Options:
 BANNER
   opts.on("--token TOKEN", "Use token") { |token| options[:token] = token }
   opts.on("--user USER", "Use user") { |user| options[:user] = user }
-  opts.on("--organization ORGANIZATION", "Use user") { |organization| options[:organization] = organization }
+  opts.on("--organization ORGANIZATION", "Use organization") { |organization| options[:organization] = organization }
   opts.on("--private", "Only show private repos") { options[:private] = true }
   opts.on("--external", "Also include external projects in graph (can get super-messy)") { options[:external] = true }
   opts.on("--map SEARCH=REPLACE", "Replace in project name to find them as internal: 'foo=bar' -> replace foo in repo names to bar") do |map|
