@@ -31,9 +31,12 @@ module RepoDependencyGraph
     def dependencies(options)
       all = Bundler::OrganizationAudit::Repo.all(options).sort_by(&:project)
       all.select!(&:private?) if options[:private]
+      all.select! { |r| r.project =~ options[:select] } if options[:select]
+      all.reject! { |r| r.project =~ options[:reject] } if options[:reject]
+
       possible = all.map(&:project)
       dependencies = all.map do |repo|
-        found = dependent_gems(repo) || []
+        found = dependent_repos(repo, options) || []
         found = found & possible
         next if found.empty?
         puts "#{repo.project}: #{found.join(", ")}"
@@ -42,13 +45,19 @@ module RepoDependencyGraph
       Hash[dependencies]
     end
 
-    def dependent_gems(repo)
-      if repo.gem?
-        load_spec(repo.gemspec_content).runtime_dependencies.map(&:name)
-      elsif content = repo.content("Gemfile.lock")
-        Bundler::LockfileParser.new(content).specs.map(&:name)
-      elsif content = repo.content("Gemfile")
-        content.scan(/gem ['"](.*?)['"]/).flatten
+    def dependent_repos(repo, options)
+      if options[:chef]
+        if content = repo.content("metadata.rb")
+          content.scan(/^\s*depends ['"](.*?)['"]/).flatten
+        end
+      else
+        if repo.gem?
+          load_spec(repo.gemspec_content).runtime_dependencies.map(&:name)
+        elsif content = repo.content("Gemfile.lock")
+          Bundler::LockfileParser.new(content).specs.map(&:name)
+        elsif content = repo.content("Gemfile")
+          content.scan(/^\s*gem ['"](.*?)['"]/).flatten
+        end
       end
     end
 

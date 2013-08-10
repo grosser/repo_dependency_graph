@@ -26,6 +26,9 @@ BANNER
   opts.on("--user USER", "Use user") { |user| options[:user] = user }
   opts.on("--organization ORGANIZATION", "Use user") { |organization| options[:organization] = organization }
   opts.on("--private", "Only show private repos") { options[:private] = true }
+  opts.on("--chef", "Parse chef metadata.rb files") { options[:chef] = true }
+  opts.on("--select REGEX", "Only include repos with matching names") { |regex| options[:select] = Regexp.new(regex) }
+  opts.on("--reject REGEX", "Exclude repos with matching names") { |regex| options[:reject] = Regexp.new(regex) }
   opts.on("-h", "--help", "Show this.") { puts opts; exit }
   opts.on("-v", "--version", "Show Version"){ puts RepoDependencyGraph::VERSION; exit}
 end.parse!

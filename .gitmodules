@@ -7,3 +7,12 @@
 [submodule "spec/repo-test-user/repo_c"]
 	path = spec/repo-test-user/repo_c
 	url = https://github.com/repo-test-user/repo_c.git
+[submodule "spec/repo-test-user/chef_a"]
+	path = spec/repo-test-user/chef_a
+	url = https://github.com/repo-test-user/chef_a.git
+[submodule "spec/repo-test-user/chef_b"]
+	path = spec/repo-test-user/chef_b
+	url = https://github.com/repo-test-user/chef_b.git
+[submodule "spec/repo-test-user/chef_c"]
+	path = spec/repo-test-user/chef_c
+	url = https://github.com/repo-test-user/chef_c.git

@@ -8,9 +8,17 @@ describe RepoDependencyGraph do
   end
 
   context ".dependencies" do
+    before do
+      RepoDependencyGraph.stub(:puts)
+    end
+
     if File.exist?("spec/private.yml")
-      it "gathers dependencies for private orgs" do
-        graph = RepoDependencyGraph.send(:dependencies, :organization => config["organization"], :token => config["token"])
+      it "gathers dependencies for private organizations" do
+        graph = RepoDependencyGraph.send(:dependencies,
+          :organization => config["organization"],
+          :token => config["token"],
+          :select => Regexp.new(config["expected_organization_select"])
+        )
         expected = graph[config["expected_organization"]]
         expected.should == config["expected_organization_dependencies"]
       end
@@ -24,6 +32,21 @@ describe RepoDependencyGraph do
     it "finds nothing for private when all repos are public" do
       graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :private => true)
       graph.should == {}
+    end
+
+    it "can filter" do
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :select => /_b|a/)
+      graph.should == {"repo_a"=>["repo_b"]}
+    end
+
+    it "can reject" do
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :reject => /_c/)
+      graph.should == {"repo_a"=>["repo_b"]}
+    end
+
+    it "gathers chef dependencies for a user" do
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :chef => true)
+      graph.should == {"chef_a"=>["chef_b", "chef_c"], "chef_c"=>["chef_b"]}
     end
   end
 

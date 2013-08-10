@@ -7,3 +7,4 @@ organization: org
 expected_organization: org-private-repo
 expected_organization_dependencies:
  - thing-that-depends-on-org-private-repo
+expected_organization_select: something
