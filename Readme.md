@@ -15,6 +15,7 @@ Install [graphviz](http://www.graphviz.org/Download_macos.php)
         --organization ORGANIZATION  Use user
         --private                    Only show private repos
         --external                   Also include external projects in graph (can get super-messy)
+        --map SEARCH=REPLACE         Replace in project name to find them as internal: 'foo=bar' -> replace foo in repo names to bar
         --chef                       Parse chef metadata.rb files
         --select REGEX               Only include repos with matching names
         --reject REGEX               Exclude repos with matching names

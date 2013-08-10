@@ -27,6 +27,10 @@ BANNER
   opts.on("--organization ORGANIZATION", "Use user") { |organization| options[:organization] = organization }
   opts.on("--private", "Only show private repos") { options[:private] = true }
   opts.on("--external", "Also include external projects in graph (can get super-messy)") { options[:external] = true }
+  opts.on("--map SEARCH=REPLACE", "Replace in project name to find them as internal: 'foo=bar' -> replace foo in repo names to bar") do |map|
+    options[:map] = map.split("=")
+    options[:map][0] = Regexp.new(options[:map][0])
+  end
   opts.on("--chef", "Parse chef metadata.rb files") { options[:chef] = true }
   opts.on("--select REGEX", "Only include repos with matching names") { |regex| options[:select] = Regexp.new(regex) }
   opts.on("--reject REGEX", "Exclude repos with matching names") { |regex| options[:reject] = Regexp.new(regex) }

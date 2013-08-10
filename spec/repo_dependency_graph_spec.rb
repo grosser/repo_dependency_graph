@@ -53,6 +53,22 @@ describe RepoDependencyGraph do
       graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :external => true)
       graph.should == {"repo_a"=>["repo_b", "repo_c"], "repo_c"=>["repo_b", "activesupport"]}
     end
+
+    it "can map repo names so misnamed repos can be found as internal" do
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :map => [/repo_(c|d)/, "activesupport"])
+      graph.should == {"repo_a"=>["repo_b"], "repo_c"=>["repo_b", "activesupport"]}
+    end
+
+    it "can map repo names to nothing" do
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :map => [/repo_/])
+      graph.should == {}
+    end
+
+    it "prevents silly map and external" do
+      expect {
+        RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :map => [/repo_(c|d)/, "activesupport"], :external => true)
+      }.to raise_error(/internal/)
+    end
   end
 
   context ".draw" do
