@@ -89,6 +89,16 @@ describe RepoDependencyGraph do
       spec.name.should == "foo"
       spec.version.to_s.should == "1.2.3"
     end
+
+    it "loads spec with IO.read" do
+      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+        Gem::Specification.new "foo", IO.read("xxxx") do |s|
+          s.add_runtime_dependency "xxx", "1.1.1"
+        end
+      RUBY
+      spec.name.should == "foo"
+      spec.version.to_s.should == "1.2.3"
+    end
   end
 
   context "CLI" do

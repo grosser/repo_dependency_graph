@@ -57,7 +57,7 @@ module RepoDependencyGraph
         gsub(/^\s*require .*$/, "").
         gsub(/([a-z\d]+::)+version/i, '"1.2.3"').
         gsub(/^\s*\$(:|LOAD_PATH).*/, "").
-        gsub(/File\.read\(.*?\)/, '"1.2.3"')
+        gsub(/(File|IO)\.read\(.*?\)/, '"1.2.3"')
     end
   end
 end
