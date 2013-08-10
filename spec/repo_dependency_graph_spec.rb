@@ -48,6 +48,11 @@ describe RepoDependencyGraph do
       graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :chef => true)
       graph.should == {"chef_a"=>["chef_b", "chef_c"], "chef_c"=>["chef_b"]}
     end
+
+    it "can include external dependencies" do
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :external => true)
+      graph.should == {"repo_a"=>["repo_b", "repo_c"], "repo_c"=>["repo_b", "activesupport"]}
+    end
   end
 
   context ".draw" do

@@ -37,7 +37,7 @@ module RepoDependencyGraph
       possible = all.map(&:project)
       dependencies = all.map do |repo|
         found = dependent_repos(repo, options) || []
-        found = found & possible
+        found = found & possible unless options[:external]
         next if found.empty?
         puts "#{repo.project}: #{found.join(", ")}"
         [repo.project, found]
