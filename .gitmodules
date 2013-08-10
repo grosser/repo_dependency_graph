@@ -1,0 +1,9 @@
+[submodule "spec/repo-test-user/repo_a"]
+	path = spec/repo-test-user/repo_a
+	url = https://github.com/repo-test-user/repo_a.git
+[submodule "spec/repo-test-user/repo_b"]
+	path = spec/repo-test-user/repo_b
+	url = https://github.com/repo-test-user/repo_b.git
+[submodule "spec/repo-test-user/repo_c"]
+	path = spec/repo-test-user/repo_c
+	url = https://github.com/repo-test-user/repo_c.git
