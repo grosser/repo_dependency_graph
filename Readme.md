@@ -7,8 +7,11 @@ Install
 
 Usage
 =====
+Install [graphviz](http://www.graphviz.org/Download_macos.php)
 
-    repo-dependency-graph --organization xyz --token ttttoookkkeeeennn
+```Bash
+repo-dependency-graph --organization xyz --token ttttoookkkeeeennn
+```
 
 ### Token for private repos
 
@@ -23,8 +26,7 @@ repo-dependency-graph --organization your-org --token TOKEN
 TODO
 ====
  - work for public repos
- - better gemspec detection
- - runtime-dependency and all
+ - switch between runtime-dependency / development-dependency / any
  - `--ignore` flag
 
 Author
