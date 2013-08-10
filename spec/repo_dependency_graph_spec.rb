@@ -17,6 +17,17 @@ describe RepoDependencyGraph do
     end
   end
 
+  context ".draw" do
+    it "draws" do
+      Dir.mktmpdir do
+        Dir.chdir do
+          RepoDependencyGraph.send(:draw, "foo" => ["bar"])
+          File.exist?("out.png").should == true
+        end
+      end
+    end
+  end
+
   context ".load_spec" do
     it "loads simple spec" do
       spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
