@@ -1,4 +1,4 @@
-Show the dependencies of your private repos
+Show the dependencies of your repos
 
 Install
 =======
@@ -9,25 +9,38 @@ Usage
 =====
 Install [graphviz](http://www.graphviz.org/Download_macos.php)
 
-```Bash
-repo-dependency-graph --organization xyz --token ttttoookkkeeeennn
-```
+<!-- update from ./bin/repo-dependency-graph -h -->
+        --token TOKEN                Use token
+        --user USER                  Use user
+        --organization ORGANIZATION  Use user
+        --private                    Only show private repos
+    -h, --help                       Show this.
+    -v, --version                    Show Version
 
-### Token for private repos
+### Public user
+
+```Bash
+repo-dependency-graph --user repo-test-user
+repo_a: repo_b, repo_c
+repo_c: repo_b
+```
+![Simple](http://dl.dropbox.com/u/2670385/Web/repo_dependency_graph_simple.png)
+
+### Private organization
 
 ```Bash
 # create a token that has access to your repositories
 curl -v -u your-user-name -X POST https://api.github.com/authorizations --data '{"scopes":["repo"]}'
 enter your password -> TOKEN
 
-repo-dependency-graph --organization your-org --token TOKEN
+repo-dependency-graph --organization xyz --token ttttoookkkeeeennn
 ```
 
 TODO
 ====
- - work for public repos
  - switch between runtime-dependency / development-dependency / any
- - `--ignore` flag
+ - `--ignore / --pattern` flag
+ - `--chef` flag
 
 Author
 ======
