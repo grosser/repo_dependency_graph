@@ -7,13 +7,23 @@ describe RepoDependencyGraph do
     RepoDependencyGraph::VERSION.should =~ /^[\.\da-z]+$/
   end
 
-  if File.exist?("spec/private.yml")
-    context ".dependencies" do
-      it "gathers dependencies" do
+  context ".dependencies" do
+    if File.exist?("spec/private.yml")
+      it "gathers dependencies for private orgs" do
         graph = RepoDependencyGraph.send(:dependencies, :organization => config["organization"], :token => config["token"])
         expected = graph[config["expected_organization"]]
         expected.should == config["expected_organization_dependencies"]
       end
+    end
+
+    it "gathers dependencies for a user" do
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user")
+      graph.should == {"repo_a"=>["repo_b", "repo_c"], "repo_c"=>["repo_b"]}
+    end
+
+    it "finds nothing for private when all repos are public" do
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :private => true)
+      graph.should == {}
     end
   end
 

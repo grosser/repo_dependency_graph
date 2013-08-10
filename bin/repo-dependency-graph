@@ -25,6 +25,7 @@ BANNER
   opts.on("--token TOKEN", "Use token") { |token| options[:token] = token }
   opts.on("--user USER", "Use user") { |user| options[:user] = user }
   opts.on("--organization ORGANIZATION", "Use user") { |organization| options[:organization] = organization }
+  opts.on("--private", "Only show private repos") { options[:private] = true }
   opts.on("-h", "--help", "Show this.") { puts opts; exit }
   opts.on("-v", "--version", "Show Version"){ puts RepoDependencyGraph::VERSION; exit}
 end.parse!

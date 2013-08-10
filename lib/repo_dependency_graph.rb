@@ -5,11 +5,7 @@ require "bundler" # get all dependency for lockfile_parser
 module RepoDependencyGraph
   class << self
     def run(options)
-      dependencies = dependencies(options)
-      dependencies.map do |project, dependencies|
-        puts "#{project}: #{dependencies.join(",")}"
-      end
-      draw(dependencies)
+      draw(dependencies(options))
       0
     end
 
@@ -33,7 +29,8 @@ module RepoDependencyGraph
     end
 
     def dependencies(options)
-      all = Bundler::OrganizationAudit::Repo.all(options).select(&:private?).sort_by(&:project)
+      all = Bundler::OrganizationAudit::Repo.all(options).sort_by(&:project)
+      all.select!(&:private?) if options[:private]
       possible = all.map(&:project)
       dependencies = all.map do |repo|
         found = dependent_gems(repo) || []
