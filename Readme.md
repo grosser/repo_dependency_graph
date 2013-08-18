@@ -29,6 +29,17 @@ repo-dependency-graph --user repo-test-user
 repo_a: repo_b, repo_c
 repo_c: repo_b
 ```
+<!--
+d = {
+  "repo_a" => ["repo_b", "repo_c"],
+  "repo_b" => ["repo_d"],
+  "repo_d" => ["repo_c"],
+  "repo_c" => ["repo_b"],
+  "repo_e" => ["repo_a", "repo_b", "repo_c", "repo_d"],
+  "repo_f" => ["repo_c", "repo_d"],
+}
+draw(d)
+-->
 ![Simple](http://dl.dropbox.com/u/2670385/Web/repo_dependency_graph_simple.png)
 
 ### Private organization

@@ -24,7 +24,7 @@ module RepoDependencyGraph
       max = counts.values.max
 
       nodes = Hash[all.map do |k|
-        [k, g.add_node(k, :color => color(counts[k], max), :style => "filled")]
+        [k, g.add_node(k, :color => color(counts[k] - 1, max), :style => "filled")]
       end]
 
       dependencies.each do |project,dependencies|
