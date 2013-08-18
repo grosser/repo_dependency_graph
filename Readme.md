@@ -56,10 +56,6 @@ enter your password -> TOKEN
 repo-dependency-graph --organization xyz --token ttttoookkkeeeennn
 ```
 
-TODO
-====
- - switch between runtime-dependency / development-dependency / any
-
 Author
 ======
 [Michael Grosser](http://grosser.it)<br/>
