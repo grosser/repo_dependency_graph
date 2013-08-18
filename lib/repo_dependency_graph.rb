@@ -4,7 +4,7 @@ require "bundler" # get all dependency for lockfile_parser
 
 module RepoDependencyGraph
   class << self
-    MAX_SATURATION = 255
+    MAX_HEX = 255
 
     def run(options)
       draw(dependencies(options))
@@ -18,15 +18,15 @@ module RepoDependencyGraph
 
       g = GraphViz.new(:G, :type => :digraph)
 
-      all = (dependencies.keys + dependencies.values.flatten).uniq
-      counts = Hash[all.map { |k| [k, dependencies.values.count { |v| v.include?(k) }] }]
-      max = counts.values.max
+      counts = dependency_counts(dependencies)
+      range = counts.values.min..counts.values.max
 
-      nodes = Hash[all.map do |k|
-        [k, g.add_node(k, :color => color(counts[k] - 1, max), :style => "filled")]
+      nodes = Hash[counts.map do |project, count|
+        node = g.add_node(project, :color => color(count, range), :style => "filled")
+        [project, node]
       end]
 
-      dependencies.each do |project,dependencies|
+      dependencies.each do |project, dependencies|
         dependencies.each do |dependency|
           g.add_edge(nodes[project], nodes[dependency])
         end
@@ -36,7 +36,9 @@ module RepoDependencyGraph
     end
 
     def dependencies(options)
-      raise ArgumentError, "Map only makes sense when searching for internal repos" if options[:map] && options[:external]
+      if options[:map] && options[:external]
+        raise ArgumentError, "Map only makes sense when searching for internal repos"
+      end
 
       all = Bundler::OrganizationAudit::Repo.all(options).sort_by(&:project)
       all = all.select(&:private?) if options[:private]
@@ -80,12 +82,22 @@ module RepoDependencyGraph
         gsub(/(File|IO)\.read\(.*?\)/, '"1.2.3"')
     end
 
-    def color(value, max)
-      value *= 0.6 # change green to green to green to blue
-      i = (value * MAX_SATURATION / max);
-      a,b = MAX_SATURATION / 2, MAX_SATURATION - MAX_SATURATION / 2
-      values = [0,2,4].map { |v| (Math.sin(0.024 * i + v) * a + b).round.to_s(16).rjust(2,"0") }
+    def color(value, range)
+      value -= range.min # lowest -> green
+      max = range.max - range.min
+
+      i = (value * MAX_HEX / max);
+      i *= 0.6 # green-blue gradient instead of green-green
+      half = MAX_HEX * 0.5
+      values = [0,2,4].map { |v| (Math.sin(0.024 * i + v) * half + half).round.to_s(16).rjust(2, "0") }
       "##{values.join}"
+    end
+
+    def dependency_counts(dependencies)
+      all = (dependencies.keys + dependencies.values.flatten).uniq
+      Hash[all.map do |k|
+        [k, dependencies.values.count { |v| v.include?(k) } ]
+      end]
     end
   end
 end

@@ -84,9 +84,10 @@ describe RepoDependencyGraph do
 
   context ".color" do
     it "calculates for 1 to max" do
-      [1,2,25,50,51].map do |k,v|
-        [k, RepoDependencyGraph.send(:color, k, 3)]
-      end.should == [[1, "#f77611"], [2, "#d10595"], [25, "#23f67b"], [50, "#01aed9"], [51, "#4eff49"]]
+      values = [1,2,25,50,51]
+      values.map do |k,v|
+        [k, RepoDependencyGraph.send(:color, k, values.min..values.max)]
+      end.should == [[1, "#80f31f"], [2, "#89ef19"], [25, "#fd363f"], [50, "#492efa"], [51, "#3f36fd"]]
     end
   end
 
