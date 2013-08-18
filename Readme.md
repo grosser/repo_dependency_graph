@@ -27,7 +27,11 @@ Install [graphviz](http://www.graphviz.org/Download_macos.php)
 ```Bash
 repo-dependency-graph --user repo-test-user
 repo_a: repo_b, repo_c
+repo_b: repo_d
+repo_d: repo_c
 repo_c: repo_b
+repo_e: repo_a, repo_b, repo_c, repo_d
+repo_f: repo_c, repo_d
 ```
 <!--
 d = {
