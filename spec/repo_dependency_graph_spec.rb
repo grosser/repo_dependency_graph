@@ -82,6 +82,14 @@ describe RepoDependencyGraph do
     end
   end
 
+  context ".color" do
+    it "calculates for 1 to max" do
+      [1,2,25,50,51].map do |k,v|
+        [k, RepoDependencyGraph.send(:color, k, 3)]
+      end.should == [[1, "#f77611"], [2, "#d10595"], [25, "#23f67b"], [50, "#01aed9"], [51, "#4eff49"]]
+    end
+  end
+
   context ".load_spec" do
     it "loads simple spec" do
       spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)

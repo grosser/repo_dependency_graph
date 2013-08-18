@@ -4,6 +4,8 @@ require "bundler" # get all dependency for lockfile_parser
 
 module RepoDependencyGraph
   class << self
+    MAX_SATURATION = 255
+
     def run(options)
       draw(dependencies(options))
       0
@@ -17,7 +19,13 @@ module RepoDependencyGraph
       g = GraphViz.new(:G, :type => :digraph)
 
       all = (dependencies.keys + dependencies.values.flatten).uniq
-      nodes = Hash[all.map { |k| [k, g.add_node(k)] }]
+      counts = Hash[all.map { |k| [k, dependencies.values.count { |v| v.include?(k) }] }]
+      puts counts.inspect
+      max = counts.values.max
+
+      nodes = Hash[all.map do |k|
+        [k, g.add_node(k, :color => color(counts[k], max), :style => "filled")]
+      end]
 
       dependencies.each do |project,dependencies|
         dependencies.each do |dependency|
@@ -71,6 +79,14 @@ module RepoDependencyGraph
         gsub(/([a-z\d]+::)+version/i, '"1.2.3"').
         gsub(/^\s*\$(:|LOAD_PATH).*/, "").
         gsub(/(File|IO)\.read\(.*?\)/, '"1.2.3"')
+    end
+
+    def color(value, max)
+      value *= 0.6 # change green to green to green to blue
+      i = (value * MAX_SATURATION / max);
+      a,b = MAX_SATURATION / 2, MAX_SATURATION - MAX_SATURATION / 2
+      values = [0,2,4].map { |v| (Math.sin(0.024 * i + v) * a + b).round.to_s(16).rjust(2,"0") }
+      "##{values.join}"
     end
   end
 end
