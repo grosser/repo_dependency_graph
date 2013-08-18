@@ -20,7 +20,6 @@ module RepoDependencyGraph
 
       all = (dependencies.keys + dependencies.values.flatten).uniq
       counts = Hash[all.map { |k| [k, dependencies.values.count { |v| v.include?(k) }] }]
-      puts counts.inspect
       max = counts.values.max
 
       nodes = Hash[all.map do |k|
