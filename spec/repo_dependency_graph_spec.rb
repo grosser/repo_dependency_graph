@@ -121,6 +121,27 @@ describe RepoDependencyGraph do
       spec.version.to_s.should == "1.2.3"
     end
 
+    it "loads spec with VERSION::STRING" do
+      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+        Gem::Specification.new "foo", Foo::VERSION::STRING do |s|
+          s.add_runtime_dependency "xxx", "1.1.1"
+        end
+      RUBY
+      spec.name.should == "foo"
+      spec.version.to_s.should == "1.2.3"
+    end
+
+    it "leaves Gem::Version alone" do
+      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+        Gem::Version.new("1.1.1") || Gem::VERSION
+        Gem::Specification.new "foo", Foo::VERSION::STRING do |s|
+          s.add_runtime_dependency "xxx", "1.1.1"
+        end
+      RUBY
+      spec.name.should == "foo"
+      spec.version.to_s.should == "1.2.3"
+    end
+
     it "does not modify $LOAD_PATH" do
       expect {
         RepoDependencyGraph.send(:load_spec, <<-RUBY)
@@ -163,6 +184,10 @@ describe RepoDependencyGraph do
       RUBY
       spec.name.should == "foo"
       spec.version.to_s.should == "1.2.3"
+    end
+
+    it "returns nil on error" do
+      RepoDependencyGraph.send(:load_spec, "raise").should == nil
     end
   end
 

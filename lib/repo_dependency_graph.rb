@@ -101,8 +101,8 @@ module RepoDependencyGraph
           content.scan(/^\s*depends ['"](.*?)['"]/).flatten
         end
       else
-        if repo.gem?
-          load_spec(repo.gemspec_content).runtime_dependencies.map(&:name)
+        if repo.gem? && spec = load_spec(repo.gemspec_content)
+          spec.runtime_dependencies.map(&:name)
         elsif content = repo.content("Gemfile.lock")
           Bundler::LockfileParser.new(content).specs.map(&:name)
         elsif content = repo.content("Gemfile")
@@ -114,12 +114,13 @@ module RepoDependencyGraph
     def load_spec(content)
       eval content.
         gsub(/^\s*require .*$/, "").
-        gsub(/([a-z\d]+::)+version/i, '"1.2.3"').
+        gsub(/([a-z\d]+::)+version(::[a-z]+)?/i){|x| x =~ /^Gem::Version$/i ? x : '"1.2.3"' }.
         gsub(/^\s*\$(:|LOAD_PATH).*/, "").
         gsub(/(File|IO)\.read\(['"]VERSION.*?\)/, '"1.2.3"').
         gsub(/(File|IO)\.read\(.*?\)/, '\'  VERSION = "1.2.3"\'')
     rescue Exception
-      raise "Error when parsing content:\n#{content}\n\n#{$!}"
+      puts "Error when parsing content:\n#{content}\n\n#{$!}"
+      nil
     end
 
     def color(value, range)
