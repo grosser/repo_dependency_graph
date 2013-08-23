@@ -154,6 +154,64 @@ describe RepoDependencyGraph do
     end
   end
 
+  context ".parse_options" do
+    def call(argv, keep_defaults=false)
+      result = RepoDependencyGraph.send(:parse_options, argv)
+      result.delete(:user) unless keep_defaults
+      result
+    end
+
+    it "uses current user by default" do
+      result = call([], true)
+      result.keys.should == [:user]
+      result[:user].to_s.should_not == ""
+    end
+
+    it "parses --user" do
+      call(["--user", "foo"], true).should == {:user => "foo"}
+    end
+
+    it "parses --organization" do
+      call(["--organization", "foo"]).should == {:organization => "foo"}
+    end
+
+    it "parses --token" do
+      call(["--token", "foo"]).should == {:token => "foo"}
+    end
+
+    it "parses --private" do
+      call(["--private"]).should == {:private => true}
+    end
+
+    it "parses --external" do
+      call(["--external"]).should == {:external => true}
+    end
+
+    it "parses --chef" do
+      call(["--chef"]).should == {:chef => true}
+    end
+
+    it "parses simple --map" do
+      call(["--map", "A=B"]).should == {:map => [/A/, "B"]}
+    end
+
+    it "parses empty --map" do
+      call(["--map", "A="]).should == {:map => [/A/, ""]}
+    end
+
+    it "parses regex --map" do
+      call(["--map", "A.?=B"]).should == {:map => [/A.?/, "B"]}
+    end
+
+    it "parses --select" do
+      call(["--select", "A.?B"]).should == {:select => /A.?B/}
+    end
+
+    it "parses --reject" do
+      call(["--reject", "A.?B"]).should == {:reject => /A.?B/}
+    end
+  end
+
   context "CLI" do
     it "shows --version" do
       audit("--version").should include(RepoDependencyGraph::VERSION)
