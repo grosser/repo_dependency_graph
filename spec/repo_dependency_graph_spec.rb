@@ -201,7 +201,6 @@ describe RepoDependencyGraph do
     it "uses current user by default" do
       result = call([], true)
       result.keys.should == [:user]
-      result[:user].to_s.should_not == ""
     end
 
     it "parses --user" do
