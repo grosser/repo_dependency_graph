@@ -135,7 +135,19 @@ describe RepoDependencyGraph do
 
     it "loads spec with File.read" do
       spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
-        Gem::Specification.new "foo", File.read("xxxx") do |s|
+        Gem::Specification.new "foo", File.read("VERSION") do |s|
+          s.add_runtime_dependency "xxx", "1.1.1"
+        end
+      RUBY
+      spec.name.should == "foo"
+      spec.version.to_s.should == "1.2.3"
+    end
+
+    it "loads spec with File.read from unknown file (travis-ci)" do
+      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+        File.read(foooo) =~ /\\bVERSION\\s*=\\s*["'](.+?)["']/
+        version = \$1
+        Gem::Specification.new "foo", version do |s|
           s.add_runtime_dependency "xxx", "1.1.1"
         end
       RUBY
@@ -145,7 +157,7 @@ describe RepoDependencyGraph do
 
     it "loads spec with IO.read" do
       spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
-        Gem::Specification.new "foo", IO.read("xxxx") do |s|
+        Gem::Specification.new "foo", IO.read("VERSION") do |s|
           s.add_runtime_dependency "xxx", "1.1.1"
         end
       RUBY

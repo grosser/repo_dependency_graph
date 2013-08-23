@@ -116,7 +116,10 @@ module RepoDependencyGraph
         gsub(/^\s*require .*$/, "").
         gsub(/([a-z\d]+::)+version/i, '"1.2.3"').
         gsub(/^\s*\$(:|LOAD_PATH).*/, "").
-        gsub(/(File|IO)\.read\(.*?\)/, '"1.2.3"')
+        gsub(/(File|IO)\.read\(['"]VERSION.*?\)/, '"1.2.3"').
+        gsub(/(File|IO)\.read\(.*?\)/, '\'  VERSION = "1.2.3"\'')
+    rescue Exception
+      raise "Error when parsing content:\n#{content}\n\n#{$!}"
     end
 
     def color(value, range)
