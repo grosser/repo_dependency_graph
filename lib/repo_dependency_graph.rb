@@ -1,5 +1,5 @@
 require "repo_dependency_graph/version"
-require "bundler/organization_audit/repo"
+require "organization_audit/repo"
 require "bundler" # get all dependency for lockfile_parser
 
 module RepoDependencyGraph
@@ -58,14 +58,14 @@ module RepoDependencyGraph
       counts = dependency_counts(dependencies)
       range = counts.values.min..counts.values.max
 
-      nodes = Hash[counts.map do |project, count|
-        node = g.add_node(project, :color => color(count, range), :style => "filled")
-        [project, node]
+      nodes = Hash[counts.map do |name, count|
+        node = g.add_node(name, :color => color(count, range), :style => "filled")
+        [name, node]
       end]
 
-      dependencies.each do |project, dependencies|
+      dependencies.each do |name, dependencies|
         dependencies.each do |dependency|
-          g.add_edge(nodes[project], nodes[dependency])
+          g.add_edge(nodes[name], nodes[dependency])
         end
       end
 
@@ -77,20 +77,20 @@ module RepoDependencyGraph
         raise ArgumentError, "Map only makes sense when searching for internal repos"
       end
 
-      all = Bundler::OrganizationAudit::Repo.all(options).sort_by(&:project)
+      all = OrganizationAudit::Repo.all(options).sort_by(&:name)
       all = all.select(&:private?) if options[:private]
-      all = all.select { |r| r.project =~ options[:select] } if options[:select]
-      all = all.reject { |r| r.project =~ options[:reject] } if options[:reject]
+      all = all.select { |r| r.name =~ options[:select] } if options[:select]
+      all = all.reject { |r| r.name =~ options[:reject] } if options[:reject]
 
-      possible = all.map(&:project)
+      possible = all.map(&:name)
       possible.map! { |p| p.sub(options[:map][0], options[:map][1].to_s) } if options[:map]
 
       dependencies = all.map do |repo|
         found = dependent_repos(repo, options) || []
         found = found & possible unless options[:external]
         next if found.empty?
-        puts "#{repo.project}: #{found.join(", ")}"
-        [repo.project, found]
+        puts "#{repo.name}: #{found.join(", ")}"
+        [repo.name, found]
       end.compact
       Hash[dependencies]
     end
