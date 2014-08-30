@@ -8,6 +8,11 @@ GEM
   remote: https://rubygems.org/
   specs:
     bump (0.5.0)
+    byebug (3.2.0)
+      columnize (~> 0.8)
+      debugger-linecache (~> 1.2)
+    columnize (0.8.9)
+    debugger-linecache (1.2.0)
     diff-lcs (1.2.5)
     json (1.8.1)
     organization_audit (1.0.4)
@@ -28,6 +33,7 @@ PLATFORMS
 
 DEPENDENCIES
   bump
+  byebug
   rake
   repo_dependency_graph!
   rspec (~> 2)

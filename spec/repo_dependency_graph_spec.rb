@@ -1,6 +1,13 @@
 require "spec_helper"
 
 describe RepoDependencyGraph do
+  def silence_stderr
+    old, $stderr = $stderr, StringIO.new
+    yield
+  ensure
+    $stderr = old
+  end
+
   let(:config){ YAML.load_file("spec/private.yml") }
 
   it "has a VERSION" do
@@ -25,49 +32,166 @@ describe RepoDependencyGraph do
     end
 
     it "gathers dependencies for a user" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user")
-      graph.should == {"repo_a"=>["repo_b", "repo_c"], "repo_c"=>["repo_b"]}
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :token => config["token"])
+      graph.should == {"repo_a"=>[["repo_b"], ["repo_c"]], "repo_c"=>[["repo_b"]]}
     end
 
     it "finds nothing for private when all repos are public" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :private => true)
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :private => true, :token => config["token"])
       graph.should == {}
     end
 
     it "can filter" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :select => /_b|a/)
-      graph.should == {"repo_a"=>["repo_b"]}
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :select => /_b|a/, :token => config["token"])
+      graph.should == {"repo_a"=>[["repo_b"]]}
     end
 
     it "can reject" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :reject => /_c/)
-      graph.should == {"repo_a"=>["repo_b"]}
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :reject => /_c/, :token => config["token"])
+      graph.should == {"repo_a"=>[["repo_b"]]}
     end
 
     it "gathers chef dependencies for a user" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :chef => true)
-      graph.should == {"chef_a"=>["chef_b", "chef_c"], "chef_c"=>["chef_b"]}
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :chef => true, :token => config["token"])
+      graph.should == {"chef_a"=>[["chef_b", "~> 0.1"], ["chef_c", "~> 0.1"]], "chef_c"=>[["chef_b", "~> 0.1"]]}
     end
 
     it "can include external dependencies" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :external => true)
-      graph.should == {"repo_a"=>["repo_b", "repo_c"], "repo_c"=>["repo_b", "activesupport"]}
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :external => true, :token => config["token"])
+      graph.should == {"repo_a"=>[["repo_b"], ["repo_c"]], "repo_c"=>[["repo_b"], ["activesupport"]]}
     end
 
     it "can map repo names so misnamed repos can be found as internal" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :map => [/repo_(c|d)/, "activesupport"])
-      graph.should == {"repo_a"=>["repo_b"], "repo_c"=>["repo_b", "activesupport"]}
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :map => [/repo_(c|d)/, "activesupport"], :token => config["token"])
+      graph.should == {"repo_a"=>[["repo_b"]], "repo_c"=>[["repo_b"], ["activesupport"]]}
     end
 
     it "can map repo names to nothing" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :map => [/repo_/])
+      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :map => [/repo_/], :token => config["token"])
       graph.should == {}
     end
 
     it "prevents silly map and external" do
       expect {
-        RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :map => [/repo_(c|d)/, "activesupport"], :external => true)
+        RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :map => [/repo_(c|d)/, "activesupport"], :external => true, :token => config["token"])
       }.to raise_error(/internal/)
+    end
+  end
+
+  context ".scan_gemfile" do
+    def call(*args)
+      RepoDependencyGraph.send(:scan_gemfile, *args)
+    end
+
+    it "finds nothing" do
+      call("").should == []
+    end
+
+    it "finds without version" do
+      call("gem 'foo'").should == [["foo"]]
+    end
+
+    it "finds with version" do
+      call("gem 'foo', '1.2.3'").should == [["foo", "1.2.3"]]
+    end
+
+    it "finds ref with 1.8 syntax" do
+      call("gem 'foo', :ref => 'abcd'").should == [["foo", "abcd"]]
+      call("gem 'foo'  ,:ref=>'abcd'").should == [["foo", "abcd"]]
+    end
+
+    it "finds ref with 1.9 syntax" do
+      call("gem 'foo', ref: 'abcd'").should == [["foo", "abcd"]]
+      call("gem 'foo',ref:'abcd'").should == [["foo", "abcd"]]
+    end
+  end
+
+  context ".scan_chef_metadata" do
+    def call(*args)
+      RepoDependencyGraph.send(:scan_chef_metadata, *args)
+    end
+
+    it "finds nothing" do
+      call("").should == []
+    end
+
+    it "finds without version" do
+      call("depends 'foo'").should == [["foo"]]
+    end
+
+    it "finds with version" do
+      call("depends 'foo', '1.2.3'").should == [["foo", "1.2.3"]]
+    end
+  end
+
+  context ".scan_gemfile_lock" do
+    def call(*args)
+      RepoDependencyGraph.send(:scan_gemfile_lock, *args)
+    end
+
+    it "finds without version" do
+      content = <<-LOCK.gsub(/^        /, "")
+        GEM
+          remote: https://rubygems.org/
+          specs:
+            bump (0.5.0)
+            diff-lcs (1.2.5)
+            json (1.8.1)
+            organization_audit (1.0.4)
+              json
+            rspec (2.14.1)
+              rspec-core (~> 2.14.0)
+              rspec-expectations (~> 2.14.0)
+              rspec-mocks (~> 2.14.0)
+            rspec-core (2.14.7)
+            rspec-expectations (2.14.5)
+              diff-lcs (>= 1.1.3, < 2.0)
+            rspec-mocks (2.14.5)
+
+        PLATFORMS
+          ruby
+
+        DEPENDENCIES
+          bump
+          rspec (~> 2)
+          organization_audit
+      LOCK
+      call(content).should == [
+        ["bump", "0.5.0"],
+        ["diff-lcs", "1.2.5"],
+        ["json", "1.8.1"],
+        ["organization_audit", "1.0.4"],
+        ["rspec", "2.14.1"],
+        ["rspec-core", "2.14.7"],
+        ["rspec-expectations", "2.14.5"],
+        ["rspec-mocks", "2.14.5"]
+      ]
+    end
+
+    it "finds ref" do
+      content = <<-LOCK.gsub(/^        /, "")
+        GIT
+          remote: git@github.com:foo/bar.git
+          revision: 891e256a0364079a46259b3fda9c68f816bbe24c
+          specs:
+            barz (0.0.4)
+              json
+
+        GEM
+          remote: https://rubygems.org/
+          specs:
+            json (1.8.1)
+
+        PLATFORMS
+          ruby
+
+        DEPENDENCIES
+          barz!
+      LOCK
+      call(content).should == [
+        ["barz", "0.0.4"],
+        ["json", "1.8.1"]
+      ]
     end
   end
 
@@ -187,7 +311,9 @@ describe RepoDependencyGraph do
     end
 
     it "returns nil on error" do
-      RepoDependencyGraph.send(:load_spec, "raise").should == nil
+      silence_stderr do
+        RepoDependencyGraph.send(:load_spec, "raise").should == nil
+      end
     end
   end
 

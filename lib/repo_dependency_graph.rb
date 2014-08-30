@@ -7,7 +7,8 @@ module RepoDependencyGraph
     MAX_HEX = 255
 
     def run(argv)
-      draw(dependencies(parse_options(argv)))
+      options = parse_options(argv)
+      draw(dependencies(options), options)
       0
     end
 
@@ -28,6 +29,7 @@ module RepoDependencyGraph
         BANNER
         opts.on("--token TOKEN", "Use token") { |token| options[:token] = token }
         opts.on("--user USER", "Use user") { |user| options[:user] = user }
+        opts.on("--draw TYPE", "png, html, table (default: png)") { |draw| options[:draw] = draw }
         opts.on("--organization ORGANIZATION", "Use organization") { |organization| options[:organization] = organization }
         opts.on("--private", "Only show private repos") { options[:private] = true }
         opts.on("--external", "Also include external projects in graph (can get super-messy)") { options[:external] = true }
@@ -56,26 +58,119 @@ module RepoDependencyGraph
       result.empty? ? nil : result
     end
 
-    def draw(dependencies)
-      require 'graphviz'
+    def draw(dependencies, options)
+      case options[:draw]
+      when "html"
+        nodes, edges = convert_to_graphviz(dependencies)
+        html = <<-HTML.gsub(/^          /, "")
+          <!doctype html>
+          <html>
+            <head>
+              <title>Network</title>
+            <style>
+              #mynetwork {
+                width: 2000px;
+                height: 2000px;
+                border: 1px solid lightgray;
+                background: #F3F3F3;
+              }
+            </style>
 
-      g = GraphViz.new(:G, :type => :digraph)
+            <script type="text/javascript" src="http://visjs.org/dist/vis.js"></script>
+            <link href="http://visjs.org/dist/vis.css" rel="stylesheet" type="text/css" />
 
+            <script type="text/javascript">
+              var nodes = null;
+              var edges = null;
+              var network = null;
+
+              function draw() {
+                nodes = #{nodes.values.to_json};
+                edges = #{edges.to_json};
+
+                var container = document.getElementById('mynetwork');
+                var data = {
+                  nodes: nodes,
+                  edges: edges
+                };
+                var options = {stabilize: false};
+
+                new vis.Network(container, data, options);
+              }
+            </script>
+          </head>
+
+          <body onload="draw()">
+            <div id="mynetwork"></div>
+          </body>
+        </html>
+        HTML
+        File.write("out.html", html)
+      when "table"
+        tables = dependencies.map do |name, uses|
+          used = dependencies.map do |d, uses|
+            used = uses.detect { |d| d.first == name }
+            [d, used.last] if used
+          end.compact
+          size = [used.size, uses.size, 1].max
+          table = []
+          size.times do |i|
+            table[i] = [
+              (used[i] || []).join(": "),
+              (name if i == 0),
+              (uses[i] || []).join(": ")
+            ]
+          end
+          table.unshift ["Used", "", "Uses"]
+          table
+        end
+        tables.map!{ |t| "<table>\n#{t.map{|t| "<tr>#{t.map{|t| "<td>#{t}</td>" }.join("")}</tr>"  }.join("\n")}\n</table>" }
+
+        html = <<-HTML.gsub(/^          /, "")
+          <!doctype html>
+          <html>
+            <head>
+              <title>Network</title>
+              <style>
+                table { width: 600px; }
+              </style>
+            </head>
+            <body>
+              #{tables.join("<br>\n<br>\n")}
+            </body>
+          </html>
+        HTML
+        File.write("out.html", html)
+      else
+        nodes, edges = convert_to_graphviz(dependencies)
+        require 'graphviz'
+        g = GraphViz.new(:G, :type => :digraph)
+
+        nodes = Hash[nodes.map do |_, data|
+          node = g.add_node(data[:id], :color => data[:color], :style => "filled")
+          [data[:id], node]
+        end]
+
+        edges.each do |edge|
+          g.add_edge(nodes[edge[:from]], nodes[edge[:to]], :label => edge[:label])
+        end
+
+        g.output(:png => "out.png")
+      end
+    end
+
+    def convert_to_graphviz(dependencies)
       counts = dependency_counts(dependencies)
       range = counts.values.min..counts.values.max
-
-      nodes = Hash[counts.map do |name, count|
-        node = g.add_node(name, :color => color(count, range), :style => "filled")
-        [name, node]
+      nodes = Hash[counts.each_with_index.map do |(name, count), i|
+        [name, {:id => name, :color => color(count, range)}]
       end]
-
-      dependencies.each do |name, dependencies|
-        dependencies.each do |dependency|
-          g.add_edge(nodes[name], nodes[dependency])
+      edges = dependencies.map do |name, dependencies|
+        dependencies.map do |dependency, version|
+          {:from => nodes[name][:id], :to => nodes[dependency][:id], :label => (version || '')}
         end
-      end
-
-      g.output(:png => "out.png")
+      end.flatten
+      [nodes, edges]
     end
 
     def dependencies(options)
@@ -93,9 +188,9 @@ module RepoDependencyGraph
 
       dependencies = all.map do |repo|
         found = dependent_repos(repo, options) || []
-        found = found & possible unless options[:external]
+        found.select! { |f| possible.include?(f.first) } unless options[:external]
         next if found.empty?
-        puts "#{repo.name}: #{found.join(", ")}"
+        puts "#{repo.name}: #{found.map { |n,v| "#{n}: #{v}" }.join(", ")}"
         [repo.name, found]
       end.compact
       Hash[dependencies]
@@ -104,17 +199,33 @@ module RepoDependencyGraph
     def dependent_repos(repo, options)
       if options[:chef]
         if content = repo.content("metadata.rb")
-          content.scan(/^\s*depends ['"](.*?)['"]/).flatten
+          scan_chef_metadata(content)
         end
       else
         if repo.gem? && spec = load_spec(repo.gemspec_content)
-          spec.runtime_dependencies.map(&:name)
+          spec.runtime_dependencies.map do |d|
+            r = d.requirement.to_s
+            r = nil if r == ">= 0"
+            [d.name, r].compact
+          end
         elsif content = repo.content("Gemfile.lock")
-          Bundler::LockfileParser.new(content).specs.map(&:name)
+          scan_gemfile_lock(content)
         elsif content = repo.content("Gemfile")
-          content.scan(/^\s*gem ['"](.*?)['"]/).flatten
+          scan_gemfile(content)
         end
       end
+    end
+
+    def scan_chef_metadata(content)
+      content.scan(/^\s*depends ['"](.*?)['"](?:,\s?['"](.*?)['"])?/).map(&:compact)
+    end
+
+    def scan_gemfile(content)
+      content.scan(/^\s*gem ['"](.*?)['"](?:,\s?['"](.*?)['"]|.*\bref(?::|\s*=>)\s*['"](.*)['"])?/).map(&:compact)
+    end
+
+    def scan_gemfile_lock(content)
+      Bundler::LockfileParser.new(content).specs.map { |d| [d.name, d.version.to_s] }
     end
 
     def load_spec(content)
@@ -125,7 +236,7 @@ module RepoDependencyGraph
         gsub(/(File|IO)\.read\(['"]VERSION.*?\)/, '"1.2.3"').
         gsub(/(File|IO)\.read\(.*?\)/, '\'  VERSION = "1.2.3"\'')
     rescue Exception
-      puts "Error when parsing content:\n#{content}\n\n#{$!}"
+      $stderr.puts "Error when parsing content:\n#{content}\n\n#{$!}"
       nil
     end
 
@@ -141,9 +252,9 @@ module RepoDependencyGraph
     end
 
     def dependency_counts(dependencies)
-      all = (dependencies.keys + dependencies.values.flatten).uniq
+      all = (dependencies.keys + dependencies.values.map { |v| v.map(&:first) }).flatten.uniq
       Hash[all.map do |k|
-        [k, dependencies.values.count { |v| v.include?(k) } ]
+        [k, dependencies.values.map(&:first).count { |name, _| name ==  k } ]
       end]
     end
   end
