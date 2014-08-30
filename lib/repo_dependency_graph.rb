@@ -42,6 +42,12 @@ module RepoDependencyGraph
         opts.on("-h", "--help", "Show this.") { puts opts; exit }
         opts.on("-v", "--version", "Show Version"){ puts RepoDependencyGraph::VERSION; exit}
       end.parse!(argv)
+
+      options[:token] ||= begin
+        token = `git config github.token`.strip
+        token if $?.success?
+      end
+
       options
     end
 

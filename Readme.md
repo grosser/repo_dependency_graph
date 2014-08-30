@@ -3,7 +3,9 @@ Show the dependencies of your repos
 Install
 =======
 
-    gem install repo_dependency_graph
+```Bash
+gem install repo_dependency_graph
+```
 
 Usage
 =====
@@ -53,6 +55,10 @@ draw(d)
 # create a token that has access to your repositories
 curl -v -u your-user-name -X POST https://api.github.com/authorizations --data '{"scopes":["repo"]}'
 enter your password -> TOKEN
+
+git config --global github.token ttttoookkkeeeennn
+
+OR
 
 repo-dependency-graph --organization xyz --token ttttoookkkeeeennn
 ```
