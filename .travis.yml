@@ -3,6 +3,6 @@ before_script:
  - sudo apt-get update
  - sudo apt-get install graphviz
 rvm:
-  - ree
   - 1.9.3
   - 2.0.0
+  - 2.1.2

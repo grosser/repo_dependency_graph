@@ -10,7 +10,7 @@ GEM
     bump (0.5.0)
     diff-lcs (1.2.5)
     json (1.8.1)
-    organization_audit (1.0.3)
+    organization_audit (1.0.4)
       json
     rake (10.1.1)
     rspec (2.14.1)
