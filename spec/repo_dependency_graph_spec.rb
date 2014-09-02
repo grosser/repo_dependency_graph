@@ -1,6 +1,8 @@
 require "spec_helper"
 
 describe RepoDependencyGraph do
+  config_file = "spec/private.yml"
+
   def silence_stderr
     old, $stderr = $stderr, StringIO.new
     yield
@@ -8,7 +10,13 @@ describe RepoDependencyGraph do
     $stderr = old
   end
 
-  let(:config){ YAML.load_file("spec/private.yml") }
+  let(:config) do
+    if File.exist?(config_file)
+      YAML.load_file(config_file)
+    else
+      {"token" => "f8a52fb5411511fb7b93b9729794dc753e6bafae"} # tome from user: some-token -> higher rate limits
+    end
+  end
 
   it "has a VERSION" do
     RepoDependencyGraph::VERSION.should =~ /^[\.\da-z]+$/
@@ -19,7 +27,7 @@ describe RepoDependencyGraph do
       RepoDependencyGraph.stub(:puts)
     end
 
-    if File.exist?("spec/private.yml")
+    if File.exist?(config_file)
       it "gathers dependencies for private organizations" do
         graph = RepoDependencyGraph.send(:dependencies,
           :organization => config["organization"],
@@ -199,7 +207,7 @@ describe RepoDependencyGraph do
     it "draws" do
       Dir.mktmpdir do
         Dir.chdir do
-          RepoDependencyGraph.send(:draw, "foo" => ["bar"])
+          RepoDependencyGraph.send(:draw, {"foo" => [["bar"]]}, {})
           File.exist?("out.png").should == true
         end
       end
@@ -318,19 +326,20 @@ describe RepoDependencyGraph do
   end
 
   context ".parse_options" do
-    def call(argv, keep_defaults=false)
+    def call(argv, keep=[])
       result = RepoDependencyGraph.send(:parse_options, argv)
-      result.delete(:user) unless keep_defaults
+      result.delete(:user) unless keep == :user
+      result.delete(:token) unless keep == :token
       result
     end
 
     it "uses current user by default" do
-      result = call([], true)
+      result = call([], :user)
       result.keys.should == [:user]
     end
 
     it "parses --user" do
-      call(["--user", "foo"], true).should == {:user => "foo"}
+      call(["--user", "foo"], :user).should == {:user => "foo"}
     end
 
     it "parses --organization" do
@@ -338,7 +347,7 @@ describe RepoDependencyGraph do
     end
 
     it "parses --token" do
-      call(["--token", "foo"]).should == {:token => "foo"}
+      call(["--token", "foo"], :token).should == {:token => "foo"}
     end
 
     it "parses --private" do
