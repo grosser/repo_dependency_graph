@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    repo_dependency_graph (0.1.4)
+    repo_dependency_graph (0.1.5)
       organization_audit
 
 GEM
@@ -15,7 +15,7 @@ GEM
     debugger-linecache (1.2.0)
     diff-lcs (1.2.5)
     json (1.8.1)
-    organization_audit (1.0.4)
+    organization_audit (1.0.5)
       json
     rake (10.1.1)
     rspec (2.14.1)
