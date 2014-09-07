@@ -38,7 +38,7 @@ module RepoDependencyGraph
           options[:map][0] = Regexp.new(options[:map][0])
           options[:map][1] = options[:map][1].to_s
         end
-        opts.on("--chef", "Parse chef metadata.rb files") { options[:chef] = true }
+        opts.on("--only TYPE", String, "Only this type (chef,gem), default: all") { |t| options[:only] = t }
         opts.on("--select REGEX", "Only include repos with matching names") { |regex| options[:select] = Regexp.new(regex) }
         opts.on("--reject REGEX", "Exclude repos with matching names") { |regex| options[:reject] = Regexp.new(regex) }
         opts.on("-h", "--help", "Show this.") { puts opts; exit }
@@ -197,12 +197,16 @@ module RepoDependencyGraph
     end
 
     def dependent_repos(repo, options)
-      if options[:chef]
+      repos = []
+
+      if !options[:only] || options[:only] == "chef"
         if content = repo.content("metadata.rb")
-          scan_chef_metadata(content)
+          repos.concat scan_chef_metadata(content)
         end
-      else
-        if repo.gem? && spec = load_spec(repo.gemspec_content)
+      end
+
+      if !options[:only] || options[:only] == "gem"
+        gems = if repo.gem? && spec = load_spec(repo.gemspec_content)
           spec.runtime_dependencies.map do |d|
             r = d.requirement.to_s
             r = nil if r == ">= 0"
@@ -213,7 +217,10 @@ module RepoDependencyGraph
         elsif content = repo.content("Gemfile")
           scan_gemfile(content)
         end
+        repos.concat gems
       end
+
+      repos
     end
 
     def scan_chef_metadata(content)

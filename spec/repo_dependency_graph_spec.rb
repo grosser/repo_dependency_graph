@@ -23,15 +23,20 @@ describe RepoDependencyGraph do
   end
 
   context ".dependencies" do
+    let(:defaults) {{ :only => "gem", :user => "repo-test-user", :token => config["token"] }}
+
+    def call(options={})
+      RepoDependencyGraph.send(:dependencies, defaults.merge(options))
+    end
+
     before do
       RepoDependencyGraph.stub(:puts)
     end
 
     if File.exist?(config_file)
       it "gathers dependencies for private organizations" do
-        graph = RepoDependencyGraph.send(:dependencies,
+        graph = call(
           :organization => config["organization"],
-          :token => config["token"],
           :select => Regexp.new(config["expected_organization_select"])
         )
         expected = graph[config["expected_organization"]]
@@ -40,48 +45,40 @@ describe RepoDependencyGraph do
     end
 
     it "gathers dependencies for a user" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :token => config["token"])
-      graph.should == {"repo_a"=>[["repo_b"], ["repo_c"]], "repo_c"=>[["repo_b"]]}
+      call.should == {"repo_a"=>[["repo_b"], ["repo_c"]], "repo_c"=>[["repo_b"]]}
     end
 
     it "finds nothing for private when all repos are public" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :private => true, :token => config["token"])
-      graph.should == {}
+      call(:private => true).should == {}
     end
 
     it "can filter" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :select => /_b|a/, :token => config["token"])
-      graph.should == {"repo_a"=>[["repo_b"]]}
+      call(:select => /_b|a/).should == {"repo_a"=>[["repo_b"]]}
     end
 
     it "can reject" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :reject => /_c/, :token => config["token"])
-      graph.should == {"repo_a"=>[["repo_b"]]}
+      call(:reject => /_c/).should == {"repo_a"=>[["repo_b"]]}
     end
 
     it "gathers chef dependencies for a user" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :chef => true, :token => config["token"])
-      graph.should == {"chef_a"=>[["chef_b", "~> 0.1"], ["chef_c", "~> 0.1"]], "chef_c"=>[["chef_b", "~> 0.1"]]}
+      call(:only => "chef").should == {"chef_a"=>[["chef_b", "~> 0.1"], ["chef_c", "~> 0.1"]], "chef_c"=>[["chef_b", "~> 0.1"]]}
     end
 
     it "can include external dependencies" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :external => true, :token => config["token"])
-      graph.should == {"repo_a"=>[["repo_b"], ["repo_c"]], "repo_c"=>[["repo_b"], ["activesupport"]]}
+      call(:external => true).should == {"repo_a"=>[["repo_b"], ["repo_c"]], "repo_c"=>[["repo_b"], ["activesupport"]]}
     end
 
     it "can map repo names so misnamed repos can be found as internal" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :map => [/repo_(c|d)/, "activesupport"], :token => config["token"])
-      graph.should == {"repo_a"=>[["repo_b"]], "repo_c"=>[["repo_b"], ["activesupport"]]}
+      call(:map => [/repo_(c|d)/, "activesupport"]).should == {"repo_a"=>[["repo_b"]], "repo_c"=>[["repo_b"], ["activesupport"]]}
     end
 
     it "can map repo names to nothing" do
-      graph = RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :map => [/repo_/], :token => config["token"])
-      graph.should == {}
+      call(:map => [/repo_/]).should == {}
     end
 
     it "prevents silly map and external" do
       expect {
-        RepoDependencyGraph.send(:dependencies, :user => "repo-test-user", :map => [/repo_(c|d)/, "activesupport"], :external => true, :token => config["token"])
+        call(:map => [/repo_(c|d)/, "activesupport"], :external => true)
       }.to raise_error(/internal/)
     end
   end
@@ -358,8 +355,8 @@ describe RepoDependencyGraph do
       call(["--external"]).should == {:external => true}
     end
 
-    it "parses --chef" do
-      call(["--chef"]).should == {:chef => true}
+    it "parses --only" do
+      call(["--only", "chef"]).should == {:only => "chef"}
     end
 
     it "parses simple --map" do
