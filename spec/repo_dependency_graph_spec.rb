@@ -1,23 +1,6 @@
 require "spec_helper"
 
 describe RepoDependencyGraph do
-  config_file = "spec/private.yml"
-
-  def silence_stderr
-    old, $stderr = $stderr, StringIO.new
-    yield
-  ensure
-    $stderr = old
-  end
-
-  let(:config) do
-    if File.exist?(config_file)
-      YAML.load_file(config_file)
-    else
-      {"token" => "f8a52fb5411511fb7b93b9729794dc753e6bafae"} # tome from user: some-token -> higher rate limits
-    end
-  end
-
   it "has a VERSION" do
     RepoDependencyGraph::VERSION.should =~ /^[\.\da-z]+$/
   end
@@ -33,15 +16,14 @@ describe RepoDependencyGraph do
       RepoDependencyGraph.stub(:puts)
     end
 
-    if File.exist?(config_file)
-      it "gathers dependencies for private organizations" do
-        graph = call(
-          :organization => config["organization"],
-          :select => Regexp.new(config["expected_organization_select"])
-        )
-        expected = graph[config["expected_organization"]]
-        expected.should == config["expected_organization_dependencies"]
-      end
+    it "gathers dependencies for private organizations" do
+      pending unless config["user"]
+      graph = call(
+        :organization => config["organization"],
+        :select => Regexp.new(config["expected_organization_select"])
+      )
+      expected = graph[config["expected_organization"]]
+      expected.should == config["expected_organization_dependencies"]
     end
 
     it "gathers dependencies for a user" do
@@ -200,26 +182,6 @@ describe RepoDependencyGraph do
     end
   end
 
-  context ".draw" do
-    it "draws" do
-      Dir.mktmpdir do
-        Dir.chdir do
-          RepoDependencyGraph.send(:draw, {"foo" => [["bar"]]}, {})
-          File.exist?("out.png").should == true
-        end
-      end
-    end
-  end
-
-  context ".color" do
-    it "calculates for 1 to max" do
-      values = [1,2,25,50,51]
-      values.map do |k,v|
-        [k, RepoDependencyGraph.send(:color, k, values.min..values.max)]
-      end.should == [[1, "#80f31f"], [2, "#89ef19"], [25, "#fd363f"], [50, "#492efa"], [51, "#3f36fd"]]
-    end
-  end
-
   context ".load_spec" do
     it "loads simple spec" do
       spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
@@ -319,84 +281,6 @@ describe RepoDependencyGraph do
       silence_stderr do
         RepoDependencyGraph.send(:load_spec, "raise").should == nil
       end
-    end
-  end
-
-  context ".parse_options" do
-    def call(argv, keep=[])
-      result = RepoDependencyGraph.send(:parse_options, argv)
-      result.delete(:user) unless keep == :user
-      result.delete(:token) unless keep == :token
-      result
-    end
-
-    it "uses current user by default" do
-      result = call([], :user)
-      result.keys.should == [:user]
-    end
-
-    it "parses --user" do
-      call(["--user", "foo"], :user).should == {:user => "foo"}
-    end
-
-    it "parses --organization" do
-      call(["--organization", "foo"]).should == {:organization => "foo"}
-    end
-
-    it "parses --token" do
-      call(["--token", "foo"], :token).should == {:token => "foo"}
-    end
-
-    it "parses --private" do
-      call(["--private"]).should == {:private => true}
-    end
-
-    it "parses --external" do
-      call(["--external"]).should == {:external => true}
-    end
-
-    it "parses --only" do
-      call(["--only", "chef"]).should == {:only => "chef"}
-    end
-
-    it "parses simple --map" do
-      call(["--map", "A=B"]).should == {:map => [/A/, "B"]}
-    end
-
-    it "parses empty --map" do
-      call(["--map", "A="]).should == {:map => [/A/, ""]}
-    end
-
-    it "parses regex --map" do
-      call(["--map", "A.?=B"]).should == {:map => [/A.?/, "B"]}
-    end
-
-    it "parses --select" do
-      call(["--select", "A.?B"]).should == {:select => /A.?B/}
-    end
-
-    it "parses --reject" do
-      call(["--reject", "A.?B"]).should == {:reject => /A.?B/}
-    end
-  end
-
-  context "CLI" do
-    it "shows --version" do
-      audit("--version").should include(RepoDependencyGraph::VERSION)
-    end
-
-    it "shows --help" do
-      audit("--help").should include("Draw repo dependency graph from your organization")
-    end
-
-    def audit(command, options={})
-      sh("bin/repo-dependency-graph #{command}", options)
-    end
-
-    def sh(command, options={})
-      result = `#{command} #{"2>&1" unless options[:keep_output]}`
-      raise "FAILED #{command}\n#{result}" if $?.success? == !!options[:fail]
-      result
     end
   end
 end

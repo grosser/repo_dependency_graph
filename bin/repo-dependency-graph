@@ -1,8 +1,7 @@
 #!/usr/bin/env ruby
-require "rubygems"
 require "optparse"
 
 $LOAD_PATH << File.join(File.dirname(__FILE__), '..', 'lib')
-require "repo_dependency_graph"
+require "repo_dependency_graph/cli"
 
-exit RepoDependencyGraph.run(ARGV)
+exit RepoDependencyGraph::CLI.run(ARGV)
