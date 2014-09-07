@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    repo_dependency_graph (0.1.5)
+    repo_dependency_graph (0.2.0)
       organization_audit
 
 GEM
