@@ -46,8 +46,8 @@ d = {
 }
 draw(d)
 -->
-![Simple](http://dl.dropbox.com/u/2670385/Web/repo_dependency_graph_simple.png)
-![Travis](http://dl.dropbox.com/u/2670385/Web/repo_dependency_graph_travis-internal.png)
+![Simple](assets/simple.png?raw=true)
+![Travis](assets/travis-internal.png?raw=true)
 
 ### Private organization
 
