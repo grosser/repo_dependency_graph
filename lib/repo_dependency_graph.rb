@@ -72,12 +72,13 @@ module RepoDependencyGraph
     end
 
     def load_gemspec(repo_name, content)
-      eval content.
+      content = content.
         gsub(/^\s*(require|require_relative) .*$/, "").
         gsub(/([a-z\d]+::)+version(::[a-z]+)?/i){|x| x =~ /^Gem::Version$/i ? x : '"1.2.3"' }.
         gsub(/^\s*\$(:|LOAD_PATH).*/, "").
         gsub(/(File|IO)\.read\(['"]VERSION.*?\)/, '"1.2.3"').
         gsub(/(File|IO)\.read\(.*?\)/, '\'  VERSION = "1.2.3"\'')
+      eval content
     rescue StandardError, SyntaxError
       $stderr.puts "Error parsing #{repo_name} gemspec:\n#{content}\n\n#{$!}"
       nil
