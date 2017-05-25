@@ -75,7 +75,7 @@ module RepoDependencyGraph
         gsub(/^\s*\$(:|LOAD_PATH).*/, "").
         gsub(/(File|IO)\.read\(['"]VERSION.*?\)/, '"1.2.3"').
         gsub(/(File|IO)\.read\(.*?\)/, '\'  VERSION = "1.2.3"\'')
-    rescue Exception
+    rescue
       $stderr.puts "Error when parsing content:\n#{content}\n\n#{$!}"
       nil
     end
