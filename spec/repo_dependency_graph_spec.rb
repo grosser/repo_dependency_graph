@@ -303,5 +303,11 @@ describe RepoDependencyGraph do
         call("raise").should == nil
       end
     end
+
+    it "returns nil on syntax error" do
+      silence_stderr do
+        call("raise((({{{").should == nil
+      end
+    end
   end
 end

@@ -78,7 +78,7 @@ module RepoDependencyGraph
         gsub(/^\s*\$(:|LOAD_PATH).*/, "").
         gsub(/(File|IO)\.read\(['"]VERSION.*?\)/, '"1.2.3"').
         gsub(/(File|IO)\.read\(.*?\)/, '\'  VERSION = "1.2.3"\'')
-    rescue
+    rescue StandardError, SyntaxError
       $stderr.puts "Error parsing #{repo_name} gemspec:\n#{content}\n\n#{$!}"
       nil
     end
