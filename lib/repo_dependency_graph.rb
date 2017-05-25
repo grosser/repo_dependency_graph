@@ -34,21 +34,21 @@ module RepoDependencyGraph
 
       if !options[:only] || options[:only] == "chef"
         if content = repo.content("metadata.rb")
-          repos.concat scan_chef_metadata(content)
+          repos.concat scan_chef_metadata(repo.name, content)
         end
       end
 
       if !options[:only] || options[:only] == "gem"
-        gems = if repo.gem? && spec = load_spec(repo.gemspec_content)
+        gems = if repo.gem? && spec = load_gemspec(repo.name, repo.gemspec_content)
           spec.runtime_dependencies.map do |d|
             r = d.requirement.to_s
             r = nil if r == ">= 0"
             [d.name, r].compact
           end
         elsif content = repo.content("Gemfile.lock")
-          scan_gemfile_lock(content)
+          scan_gemfile_lock(repo.name, content)
         elsif content = repo.content("Gemfile")
-          scan_gemfile(content)
+          scan_gemfile(repo.name, content)
         end
         repos.concat gems if gems
       end
@@ -56,19 +56,22 @@ module RepoDependencyGraph
       repos
     end
 
-    def scan_chef_metadata(content)
+    def scan_chef_metadata(_, content)
       content.scan(/^\s*depends ['"](.*?)['"](?:,\s?['"](.*?)['"])?/).map(&:compact)
     end
 
-    def scan_gemfile(content)
+    def scan_gemfile(_, content)
       content.scan(/^\s*gem ['"](.*?)['"](?:,\s?['"](.*?)['"]|.*\bref(?::|\s*=>)\s*['"](.*)['"])?/).map(&:compact)
     end
 
-    def scan_gemfile_lock(content)
+    def scan_gemfile_lock(repo_name, content)
       Bundler::LockfileParser.new(content).specs.map { |d| [d.name, d.version.to_s] }
+    rescue
+      $stderr.puts "Error parsing #{repo_name} Gemfile.lock:\n#{content}\n\n#{$!}"
+      nil
     end
 
-    def load_spec(content)
+    def load_gemspec(repo_name, content)
       eval content.
         gsub(/^\s*(require|require_relative) .*$/, "").
         gsub(/([a-z\d]+::)+version(::[a-z]+)?/i){|x| x =~ /^Gem::Version$/i ? x : '"1.2.3"' }.
@@ -76,7 +79,7 @@ module RepoDependencyGraph
         gsub(/(File|IO)\.read\(['"]VERSION.*?\)/, '"1.2.3"').
         gsub(/(File|IO)\.read\(.*?\)/, '\'  VERSION = "1.2.3"\'')
     rescue
-      $stderr.puts "Error when parsing content:\n#{content}\n\n#{$!}"
+      $stderr.puts "Error parsing #{repo_name} gemspec:\n#{content}\n\n#{$!}"
       nil
     end
   end

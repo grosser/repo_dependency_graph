@@ -67,7 +67,7 @@ describe RepoDependencyGraph do
 
   context ".scan_gemfile" do
     def call(*args)
-      RepoDependencyGraph.send(:scan_gemfile, *args)
+      RepoDependencyGraph.send(:scan_gemfile, 'foo', *args)
     end
 
     it "finds nothing" do
@@ -95,7 +95,7 @@ describe RepoDependencyGraph do
 
   context ".scan_chef_metadata" do
     def call(*args)
-      RepoDependencyGraph.send(:scan_chef_metadata, *args)
+      RepoDependencyGraph.send(:scan_chef_metadata, 'foo', *args)
     end
 
     it "finds nothing" do
@@ -113,7 +113,7 @@ describe RepoDependencyGraph do
 
   context ".scan_gemfile_lock" do
     def call(*args)
-      RepoDependencyGraph.send(:scan_gemfile_lock, *args)
+      RepoDependencyGraph.send(:scan_gemfile_lock, 'foo', *args)
     end
 
     it "finds without version" do
@@ -180,11 +180,22 @@ describe RepoDependencyGraph do
         ["json", "1.8.1"]
       ]
     end
+
+    it "returns nil on error" do
+      Bundler::LockfileParser.should_receive(:new).and_raise
+      silence_stderr do
+        call("bad").should == nil
+      end
+    end
   end
 
-  context ".load_spec" do
+  context ".load_gemspec" do
+    def call(*args)
+      RepoDependencyGraph.send(:load_gemspec, 'foo', *args)
+    end
+
     it "loads simple spec" do
-      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+      spec = call(<<-RUBY)
         Gem::Specification.new "foo" do |s|
           s.add_runtime_dependency "xxx", "1.1.1"
         end
@@ -193,7 +204,7 @@ describe RepoDependencyGraph do
     end
 
     it "loads spec with require" do
-      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+      spec = call(<<-RUBY)
         require 'asdadadsadas'
         Gem::Specification.new "foo" do |s|
           s.add_runtime_dependency "xxx", "1.1.1"
@@ -203,7 +214,7 @@ describe RepoDependencyGraph do
     end
 
     it "loads spec with require_relative" do
-      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+      spec = call(<<-RUBY)
         require_relative 'asdadadsadas'
         Gem::Specification.new "foo" do |s|
           s.add_runtime_dependency "xxx", "1.1.1"
@@ -213,7 +224,7 @@ describe RepoDependencyGraph do
     end
 
     it "loads spec with VERSION" do
-      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+      spec = call(<<-RUBY)
         Gem::Specification.new "foo", Foo::VERSION do |s|
           s.add_runtime_dependency "xxx", "1.1.1"
         end
@@ -223,7 +234,7 @@ describe RepoDependencyGraph do
     end
 
     it "loads spec with VERSION::STRING" do
-      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+      spec = call(<<-RUBY)
         Gem::Specification.new "foo", Foo::VERSION::STRING do |s|
           s.add_runtime_dependency "xxx", "1.1.1"
         end
@@ -233,7 +244,7 @@ describe RepoDependencyGraph do
     end
 
     it "leaves Gem::Version alone" do
-      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+      spec = call(<<-RUBY)
         Gem::Version.new("1.1.1") || Gem::VERSION
         Gem::Specification.new "foo", Foo::VERSION::STRING do |s|
           s.add_runtime_dependency "xxx", "1.1.1"
@@ -245,7 +256,7 @@ describe RepoDependencyGraph do
 
     it "does not modify $LOAD_PATH" do
       expect {
-        RepoDependencyGraph.send(:load_spec, <<-RUBY)
+        call(<<-RUBY)
           $LOAD_PATH << "xxx"
           $:.unshift "xxx"
           Gem::Specification.new "foo", Foo::VERSION do |s|
@@ -256,7 +267,7 @@ describe RepoDependencyGraph do
     end
 
     it "loads spec with File.read" do
-      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+      spec = call(<<-RUBY)
         Gem::Specification.new "foo", File.read("VERSION") do |s|
           s.add_runtime_dependency "xxx", "1.1.1"
         end
@@ -266,7 +277,7 @@ describe RepoDependencyGraph do
     end
 
     it "loads spec with File.read from unknown file (travis-ci)" do
-      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+      spec = call(<<-RUBY)
         File.read(foooo) =~ /\\bVERSION\\s*=\\s*["'](.+?)["']/
         version = \$1
         Gem::Specification.new "foo", version do |s|
@@ -278,7 +289,7 @@ describe RepoDependencyGraph do
     end
 
     it "loads spec with IO.read" do
-      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+      spec = call(<<-RUBY)
         Gem::Specification.new "foo", IO.read("VERSION") do |s|
           s.add_runtime_dependency "xxx", "1.1.1"
         end
@@ -289,7 +300,7 @@ describe RepoDependencyGraph do
 
     it "returns nil on error" do
       silence_stderr do
-        RepoDependencyGraph.send(:load_spec, "raise").should == nil
+        call("raise").should == nil
       end
     end
   end
