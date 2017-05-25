@@ -70,7 +70,7 @@ module RepoDependencyGraph
 
     def load_spec(content)
       eval content.
-        gsub(/^\s*require .*$/, "").
+        gsub(/^\s*(require|require_relative) .*$/, "").
         gsub(/([a-z\d]+::)+version(::[a-z]+)?/i){|x| x =~ /^Gem::Version$/i ? x : '"1.2.3"' }.
         gsub(/^\s*\$(:|LOAD_PATH).*/, "").
         gsub(/(File|IO)\.read\(['"]VERSION.*?\)/, '"1.2.3"').

@@ -202,6 +202,16 @@ describe RepoDependencyGraph do
       spec.name.should == "foo"
     end
 
+    it "loads spec with require_relative" do
+      spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
+        require_relative 'asdadadsadas'
+        Gem::Specification.new "foo" do |s|
+          s.add_runtime_dependency "xxx", "1.1.1"
+        end
+      RUBY
+      spec.name.should == "foo"
+    end
+
     it "loads spec with VERSION" do
       spec = RepoDependencyGraph.send(:load_spec, <<-RUBY)
         Gem::Specification.new "foo", Foo::VERSION do |s|
