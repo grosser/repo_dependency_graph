@@ -45,15 +45,19 @@ module RepoDependencyGraph
             r = nil if r == ">= 0"
             [d.name, r].compact
           end
-        elsif content = repo.content("Gemfile.lock")
+        elsif content = content_from_any(repo, ["gems.locked", "Gemfile.lock"])
           scan_gemfile_lock(repo.name, content)
-        elsif content = repo.content("Gemfile")
+        elsif content = content_from_any(repo, ["gems.rb", "Gemfile"])
           scan_gemfile(repo.name, content)
         end
         repos.concat gems if gems
       end
 
       repos
+    end
+
+    def content_from_any(repo, files)
+      (file = (repo.file_list & files).first) && repo.content(file)
     end
 
     def scan_chef_metadata(_, content)
