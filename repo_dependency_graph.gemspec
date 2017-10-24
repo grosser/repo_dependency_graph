@@ -9,5 +9,6 @@ Gem::Specification.new name, RepoDependencyGraph::VERSION do |s|
   s.files = `git ls-files lib/ bin/`.split("\n")
   s.license = "MIT"
   s.executables = ["repo-dependency-graph"]
+  s.required_ruby_version = '>= 2.1.0'
   s.add_runtime_dependency "organization_audit"
 end
