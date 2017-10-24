@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    repo_dependency_graph (0.2.4)
+    repo_dependency_graph (0.3.0)
       organization_audit
 
 GEM
@@ -36,4 +36,4 @@ DEPENDENCIES
   ruby-graphviz
 
 BUNDLED WITH
-   1.14.6
+   1.15.3
