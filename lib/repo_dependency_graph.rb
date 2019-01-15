@@ -11,7 +11,7 @@ module RepoDependencyGraph
         raise ArgumentError, "Map only makes sense when searching for internal repos"
       end
 
-      all = OrganizationAudit::Repo.all(options).sort_by(&:name)
+      all = OrganizationAudit::Repo.all(options.slice(:user, :organization, :token)).sort_by(&:name)
       all.select!(&:private?) if options[:private]
       all.select! { |r| r.name =~ options[:select] } if options[:select]
       all.reject! { |r| r.name =~ options[:reject] } if options[:reject]
