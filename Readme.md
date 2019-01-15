@@ -20,6 +20,7 @@ Install [graphviz](http://www.graphviz.org/Download_macos.php)
         --external                   Also include external projects in graph (can get super-messy)
         --map SEARCH=REPLACE         Replace in project name to find them as internal: 'foo=bar' -> replace foo in repo names to bar
         --only TYPE                  Only this type (chef,gem), default: all
+        --max-pages PAGES
         --select REGEX               Only include repos with matching names
         --reject REGEX               Exclude repos with matching names
     -h, --help                       Show this.

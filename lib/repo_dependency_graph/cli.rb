@@ -39,6 +39,7 @@ module RepoDependencyGraph
             options[:map][1] = options[:map][1].to_s
           end
           opts.on("--only TYPE", String, "Only this type (chef,gem), default: all") { |t| options[:only] = t }
+          opts.on("--max-pages PAGES", Integer, "") { |p| options[:max_pages] = p }
           opts.on("--select REGEX", "Only include repos with matching names") { |regex| options[:select] = Regexp.new(regex) }
           opts.on("--reject REGEX", "Exclude repos with matching names") { |regex| options[:reject] = Regexp.new(regex) }
           opts.on("-h", "--help", "Show this.") { puts opts; exit }

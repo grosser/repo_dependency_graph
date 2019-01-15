@@ -189,9 +189,9 @@ describe RepoDependencyGraph do
     end
   end
 
-  context ".load_gemspec" do
+  context ".scan_gemspec" do
     def call(*args)
-      RepoDependencyGraph.send(:load_gemspec, 'foo', *args)
+      RepoDependencyGraph.send(:scan_gemspec, 'foo', *args)
     end
 
     it "loads simple spec" do
@@ -200,114 +200,43 @@ describe RepoDependencyGraph do
           s.add_runtime_dependency "xxx", "1.1.1"
         end
       RUBY
-      spec.name.should == "foo"
+      spec.should == [["xxx", "1.1.1"]]
     end
 
-    it "loads spec with require" do
+    it "loads add_dependency spec" do
       spec = call(<<-RUBY)
-        require 'asdadadsadas'
         Gem::Specification.new "foo" do |s|
-          s.add_runtime_dependency "xxx", "1.1.1"
+          s.add_dependency "xxx", "1.1.1"
         end
       RUBY
-      spec.name.should == "foo"
+      spec.should == [["xxx", "1.1.1"]]
     end
 
-    it "loads spec with require_relative" do
+    it "does not load development dependency spec" do
       spec = call(<<-RUBY)
-        require_relative 'asdadadsadas'
         Gem::Specification.new "foo" do |s|
-          s.add_runtime_dependency "xxx", "1.1.1"
+          s.add_development_dependency "xxx", "1.1.1"
         end
       RUBY
-      spec.name.should == "foo"
+      spec.should == []
     end
 
-    it "loads spec with VERSION" do
+    it "loads without version" do
       spec = call(<<-RUBY)
-        Gem::Specification.new "foo", Foo::VERSION do |s|
-          s.add_runtime_dependency "xxx", "1.1.1"
+        Gem::Specification.new "foo" do |s|
+          s.add_runtime_dependency "xxx"
         end
       RUBY
-      spec.name.should == "foo"
-      spec.version.to_s.should == "1.2.3"
+      spec.should == [["xxx"]]
     end
 
-    it "loads spec with VERSION::STRING" do
+    it "loads with (" do
       spec = call(<<-RUBY)
-        Gem::Specification.new "foo", Foo::VERSION::STRING do |s|
-          s.add_runtime_dependency "xxx", "1.1.1"
+        Gem::Specification.new "foo" do |s|
+          s.add_runtime_dependency('xxx','1.2.3')
         end
       RUBY
-      spec.name.should == "foo"
-      spec.version.to_s.should == "1.2.3"
-    end
-
-    it "leaves Gem::Version alone" do
-      spec = call(<<-RUBY)
-        Gem::Version.new("1.1.1") || Gem::VERSION
-        Gem::Specification.new "foo", Foo::VERSION::STRING do |s|
-          s.add_runtime_dependency "xxx", "1.1.1"
-        end
-      RUBY
-      spec.name.should == "foo"
-      spec.version.to_s.should == "1.2.3"
-    end
-
-    it "does not modify $LOAD_PATH" do
-      expect {
-        call(<<-RUBY)
-          $LOAD_PATH << "xxx"
-          $:.unshift "xxx"
-          Gem::Specification.new "foo", Foo::VERSION do |s|
-            s.add_runtime_dependency "xxx", "1.1.1"
-          end
-        RUBY
-      }.to_not change { $LOAD_PATH }
-    end
-
-    it "loads spec with File.read" do
-      spec = call(<<-RUBY)
-        Gem::Specification.new "foo", File.read("VERSION") do |s|
-          s.add_runtime_dependency "xxx", "1.1.1"
-        end
-      RUBY
-      spec.name.should == "foo"
-      spec.version.to_s.should == "1.2.3"
-    end
-
-    it "loads spec with File.read from unknown file (travis-ci)" do
-      spec = call(<<-RUBY)
-        File.read(foooo) =~ /\\bVERSION\\s*=\\s*["'](.+?)["']/
-        version = $1
-        Gem::Specification.new "foo", version do |s|
-          s.add_runtime_dependency "xxx", "1.1.1"
-        end
-      RUBY
-      spec.name.should == "foo"
-      spec.version.to_s.should == "1.2.3"
-    end
-
-    it "loads spec with IO.read" do
-      spec = call(<<-RUBY)
-        Gem::Specification.new "foo", IO.read("VERSION") do |s|
-          s.add_runtime_dependency "xxx", "1.1.1"
-        end
-      RUBY
-      spec.name.should == "foo"
-      spec.version.to_s.should == "1.2.3"
-    end
-
-    it "returns nil on error" do
-      silence_stderr do
-        call("raise").should == nil
-      end
-    end
-
-    it "returns nil on syntax error" do
-      silence_stderr do
-        call("raise((({{{").should == nil
-      end
+      spec.should == [["xxx", "1.2.3"]]
     end
   end
 end

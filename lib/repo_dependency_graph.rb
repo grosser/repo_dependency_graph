@@ -11,7 +11,7 @@ module RepoDependencyGraph
         raise ArgumentError, "Map only makes sense when searching for internal repos"
       end
 
-      all = OrganizationAudit::Repo.all(options.slice(:user, :organization, :token)).sort_by(&:name)
+      all = OrganizationAudit::Repo.all(options.slice(:user, :organization, :token, :max_pages)).sort_by(&:name)
       all.select!(&:private?) if options[:private]
       all.select! { |r| r.name =~ options[:select] } if options[:select]
       all.reject! { |r| r.name =~ options[:reject] } if options[:reject]
@@ -41,17 +41,14 @@ module RepoDependencyGraph
       end
 
       if !options[:only] || options[:only] == "gem"
-        gems = if repo.gem? && spec = load_gemspec(repo.name, repo.gemspec_content)
-          spec.runtime_dependencies.map do |d|
-            r = d.requirement.to_s
-            r = nil if r == ">= 0"
-            [d.name, r].compact
+        gems =
+          if repo.gem?
+            scan_gemspec(repo.name, repo.gemspec_content)
+          elsif content = content_from_any(repo, ["gems.locked", "Gemfile.lock"])
+            scan_gemfile_lock(repo.name, content)
+          elsif content = content_from_any(repo, ["gems.rb", "Gemfile"])
+            scan_gemfile(repo.name, content)
           end
-        elsif content = content_from_any(repo, ["gems.locked", "Gemfile.lock"])
-          scan_gemfile_lock(repo.name, content)
-        elsif content = content_from_any(repo, ["gems.rb", "Gemfile"])
-          scan_gemfile(repo.name, content)
-        end
         repos.concat gems if gems
       end
 
@@ -77,17 +74,8 @@ module RepoDependencyGraph
       nil
     end
 
-    def load_gemspec(repo_name, content)
-      content = content.
-        gsub(/^\s*(require|require_relative) .*$/, "").
-        gsub(/([a-z\d]+::)+version(::[a-z]+)?/i){|x| x =~ /^Gem::Version$/i ? x : '"1.2.3"' }.
-        gsub(/^\s*\$(:|LOAD_PATH).*/, "").
-        gsub(/(File|IO)\.read\(['"]VERSION.*?\)/, '"1.2.3"').
-        gsub(/(File|IO)\.read\(.*?\)/, '\'  VERSION = "1.2.3"\'')
-      eval content
-    rescue StandardError, SyntaxError
-      $stderr.puts "Error parsing #{repo_name} gemspec:\n#{content}\n\n#{$!}"
-      nil
+    def scan_gemspec(_, content)
+      content.scan(/add(?:_runtime)?_dependency[\s(]+['"](.*?)['"](?:,\s*['"](.*?)['"])?/).map(&:compact)
     end
   end
 end
