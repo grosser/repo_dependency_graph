@@ -2,11 +2,11 @@ require "spec_helper"
 
 describe RepoDependencyGraph do
   it "has a VERSION" do
-    RepoDependencyGraph::VERSION.should =~ /^[\.\da-z]+$/
+    RepoDependencyGraph::VERSION.should =~ /^[.\da-z]+$/
   end
 
   context ".dependencies" do
-    let(:defaults) {{ :only => "gem", :user => "repo-test-user", :token => config["token"] }}
+    let(:defaults) {{ only: "gem", user: "repo-test-user", token: config["token"] }}
 
     def call(options={})
       RepoDependencyGraph.send(:dependencies, defaults.merge(options))
@@ -19,48 +19,48 @@ describe RepoDependencyGraph do
     it "gathers dependencies for private organizations" do
       skip "cannot test without configured user" unless config["user"]
       graph = call(
-        :organization => config["organization"],
-        :select => Regexp.new(config["expected_organization_select"])
+        organization: config["organization"],
+        select: Regexp.new(config["expected_organization_select"])
       )
       expected = graph[config["expected_organization"]]
       expected.should == config["expected_organization_dependencies"]
     end
 
     it "gathers dependencies for a user" do
-      call.should == {"repo_a"=>[["repo_b"], ["repo_c"]], "repo_c"=>[["repo_b"]]}
+      call.should == {"repo_a" => [["repo_b"], ["repo_c"]], "repo_c" => [["repo_b"]]}
     end
 
     it "finds nothing for private when all repos are public" do
-      call(:private => true).should == {}
+      call(private: true).should == {}
     end
 
     it "can filter" do
-      call(:select => /_b|a/).should == {"repo_a"=>[["repo_b"]]}
+      call(select: /_b|a/).should == {"repo_a" => [["repo_b"]]}
     end
 
     it "can reject" do
-      call(:reject => /_c/).should == {"repo_a"=>[["repo_b"]]}
+      call(reject: /_c/).should == {"repo_a" => [["repo_b"]]}
     end
 
     it "gathers chef dependencies for a user" do
-      call(:only => "chef").should == {"chef_a"=>[["chef_b", "~> 0.1"], ["chef_c", "~> 0.1"]], "chef_c"=>[["chef_b", "~> 0.1"]]}
+      call(only: "chef").should == {"chef_a" => [["chef_b", "~> 0.1"], ["chef_c", "~> 0.1"]], "chef_c" => [["chef_b", "~> 0.1"]]}
     end
 
     it "can include external dependencies" do
-      call(:external => true).should == {"repo_a"=>[["repo_b"], ["repo_c"]], "repo_c"=>[["repo_b"], ["activesupport"]]}
+      call(external: true).should == {"repo_a" => [["repo_b"], ["repo_c"]], "repo_c" => [["repo_b"], ["activesupport"]]}
     end
 
     it "can map repo names so misnamed repos can be found as internal" do
-      call(:map => [/repo_(c|d)/, "activesupport"]).should == {"repo_a"=>[["repo_b"]], "repo_c"=>[["repo_b"], ["activesupport"]]}
+      call(map: [/repo_(c|d)/, "activesupport"]).should == {"repo_a" => [["repo_b"]], "repo_c" => [["repo_b"], ["activesupport"]]}
     end
 
     it "can map repo names to nothing" do
-      call(:map => [/repo_/]).should == {}
+      call(map: [/repo_/]).should == {}
     end
 
     it "prevents silly map and external" do
       expect {
-        call(:map => [/repo_(c|d)/, "activesupport"], :external => true)
+        call(map: [/repo_[cd]/, "activesupport"], external: true)
       }.to raise_error(/internal/)
     end
   end
@@ -83,7 +83,7 @@ describe RepoDependencyGraph do
     end
 
     it "finds ref with 1.8 syntax" do
-      call("gem 'foo', :ref => 'abcd'").should == [["foo", "abcd"]]
+      call("gem 'foo', ref: 'abcd'").should == [["foo", "abcd"]]
       call("gem 'foo'  ,:ref=>'abcd'").should == [["foo", "abcd"]]
     end
 
@@ -117,7 +117,7 @@ describe RepoDependencyGraph do
     end
 
     it "finds without version" do
-      content = <<-LOCK.gsub(/^        /, "")
+      content = <<~LOCK
         GEM
           remote: https://rubygems.org/
           specs:
@@ -156,7 +156,7 @@ describe RepoDependencyGraph do
     end
 
     it "finds ref" do
-      content = <<-LOCK.gsub(/^        /, "")
+      content = <<~LOCK
         GIT
           remote: git@github.com:foo/bar.git
           revision: 891e256a0364079a46259b3fda9c68f816bbe24c
@@ -279,7 +279,7 @@ describe RepoDependencyGraph do
     it "loads spec with File.read from unknown file (travis-ci)" do
       spec = call(<<-RUBY)
         File.read(foooo) =~ /\\bVERSION\\s*=\\s*["'](.+?)["']/
-        version = \$1
+        version = $1
         Gem::Specification.new "foo", version do |s|
           s.add_runtime_dependency "xxx", "1.1.1"
         end
