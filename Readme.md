@@ -1,4 +1,4 @@
-Show the dependencies of your repos
+Show the dependency graph of your repos
 
 Install
 =======
@@ -23,6 +23,7 @@ Install [graphviz](http://www.graphviz.org/Download_macos.php)
         --reject REGEX               Exclude repos with matching names
     -h, --help                       Show this.
     -v, --version                    Show Version
+<!-- end -->
 
 ### Public user
 
