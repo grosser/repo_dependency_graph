@@ -16,7 +16,7 @@ module SpecHelpers
     @config ||= if File.exist?(config_file)
       YAML.load_file(config_file)
     else
-      {"token" => "30642a82d9976d84fe" + "0a4bfbf4dd1e371b0d1665"} # tome from user: some-public-token (obfuscated so github does not see it) -> higher rate limits
+      {"token" => "6783dd513f2b28dc814" + "f251e3d503f1f2c2cf1c1"} # tome from user: some-public-token (obfuscated so github does not see it) -> higher rate limits
     end
   end
 end
