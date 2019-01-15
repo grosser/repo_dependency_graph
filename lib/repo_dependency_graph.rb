@@ -1,6 +1,8 @@
 require "repo_dependency_graph/version"
 require "organization_audit/repo"
+
 require "bundler" # get all dependency for lockfile_parser
+require "bundler/lockfile_parser"
 
 module RepoDependencyGraph
   class << self
@@ -10,9 +12,9 @@ module RepoDependencyGraph
       end
 
       all = OrganizationAudit::Repo.all(options).sort_by(&:name)
-      all = all.select(&:private?) if options[:private]
-      all = all.select { |r| r.name =~ options[:select] } if options[:select]
-      all = all.reject { |r| r.name =~ options[:reject] } if options[:reject]
+      all.select!(&:private?) if options[:private]
+      all.select! { |r| r.name =~ options[:select] } if options[:select]
+      all.reject! { |r| r.name =~ options[:reject] } if options[:reject]
 
       possible = all.map(&:name)
       possible.map! { |p| p.sub(options[:map][0], options[:map][1].to_s) } if options[:map]

@@ -17,7 +17,7 @@ describe RepoDependencyGraph do
     end
 
     it "gathers dependencies for private organizations" do
-      skip unless config["user"]
+      skip "cannot test without configured user" unless config["user"]
       graph = call(
         :organization => config["organization"],
         :select => Regexp.new(config["expected_organization_select"])

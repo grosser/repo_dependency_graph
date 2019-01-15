@@ -1,4 +1,4 @@
-Show the dependency graph of your repos
+Graph the dependency of your repositories
 
 Install
 =======
@@ -11,14 +11,15 @@ Usage
 =====
 Install [graphviz](http://www.graphviz.org/Download_macos.php)
 
-<!-- update from ./bin/repo-dependency-graph -h -->
+<!-- update from bundle exec ruby ./bin/repo-dependency-graph -h -->
         --token TOKEN                Use token
         --user USER                  Use user
-        --organization ORGANIZATION  Use user
+        --draw TYPE                  png, html, table (default: png)
+        --organization ORGANIZATION  Use organization
         --private                    Only show private repos
         --external                   Also include external projects in graph (can get super-messy)
         --map SEARCH=REPLACE         Replace in project name to find them as internal: 'foo=bar' -> replace foo in repo names to bar
-        --chef                       Parse chef metadata.rb files
+        --only TYPE                  Only this type (chef,gem), default: all
         --select REGEX               Only include repos with matching names
         --reject REGEX               Exclude repos with matching names
     -h, --help                       Show this.
