@@ -76,7 +76,7 @@ module RepoDependencyGraph
     end
 
     def scan_gemspec(_, content)
-      content.scan(/add(?:_runtime)?_dependency[\s(]+['"](.*?)['"](?:,\s*['"](.*?)['"])?/).map(&:compact)
+      content.scan(/add(?:_runtime)?_dependency[\s(]+['"]([^'"]*)['"](?:,\s*['"]([^'"]*)['"])*/).map(&:compact)
     end
   end
 end

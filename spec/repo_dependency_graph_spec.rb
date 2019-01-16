@@ -193,7 +193,7 @@ describe RepoDependencyGraph do
 
         DEPENDENCIES
           bump
-        
+
         BUNDLED WITH
            2.0.1
       LOCK
@@ -258,6 +258,16 @@ describe RepoDependencyGraph do
         end
       RUBY
       spec.should == [["xxx", "1.2.3"]]
+    end
+
+    it "loads multiple requirements" do
+      skip "wrong since scan does not capture multiple repetitions"
+      spec = call(<<-RUBY)
+        Gem::Specification.new "foo" do |s|
+          s.add_runtime_dependency 'xxx', '>= 1.2.3', '< 2'
+        end
+      RUBY
+      spec.should == [["xxx", ">= 1.2.3, < 2"]]
     end
   end
 end
