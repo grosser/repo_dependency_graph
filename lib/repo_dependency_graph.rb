@@ -68,6 +68,7 @@ module RepoDependencyGraph
     end
 
     def scan_gemfile_lock(repo_name, content)
+      content = content.gsub(/BUNDLED WITH\n.*\n/, "")
       Bundler::LockfileParser.new(content).specs.map { |d| [d.name, d.version.to_s] }
     rescue
       $stderr.puts "Error parsing #{repo_name} Gemfile.lock:\n#{content}\n\n#{$!}"

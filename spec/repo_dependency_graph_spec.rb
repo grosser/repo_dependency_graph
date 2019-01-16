@@ -181,6 +181,27 @@ describe RepoDependencyGraph do
       ]
     end
 
+    it "ignores new bundler versions" do
+      content = <<~LOCK
+        GEM
+          remote: https://rubygems.org/
+          specs:
+            bump (0.5.0)
+
+        PLATFORMS
+          ruby
+
+        DEPENDENCIES
+          bump
+        
+        BUNDLED WITH
+           2.0.1
+      LOCK
+      call(content).should == [
+        ["bump", "0.5.0"]
+      ]
+    end
+
     it "returns nil on error" do
       Bundler::LockfileParser.should_receive(:new).and_raise
       silence_stderr do
